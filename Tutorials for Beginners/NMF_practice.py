@@ -60,13 +60,15 @@ print(dataset_input.shape)
 
 # ********************************************************************************
 nmf_num_comp = 5
-nmf_rec_num = nmf_num_comp
+nmf_rec = np.arange(nmf_num_comp)
+#nmf_rec = np.array([0,1])
 skl_nmf = NMF(n_components=nmf_num_comp, init="nndsvda", solver="mu", max_iter=1000, 
              verbose=True, beta_loss="frobenius", l1_ratio=0.1, alpha=1.0)
 
 nmf_coeffs = skl_nmf.fit_transform(dataset_input)
+print(nmf_coeffs[:, [1,2]].shape)
 nmf_comps = skl_nmf.components_
-nmf_reconstructed = skl_nmf.inverse_transform(nmf_coeffs[:, :nmf_rec_num])
+nmf_reconstructed = np.dot(nmf_coeffs[:, nmf_rec], nmf_comps[nmf_rec])
 print(nmf_coeffs.shape)
 print(nmf_comps.shape)
 print(nmf_reconstructed.shape)

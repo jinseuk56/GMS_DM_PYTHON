@@ -63,11 +63,13 @@ print(dataset_input.shape)
 
 # ********************************************************************************
 pca_num_comp = 5
-pca_rec_num = pca_num_comp
+pca_rec = np.arange(pca_num_comp)
+#pca_rec = np.array([0, 1])
 skl_pca = PCA(n_components=pca_num_comp, whiten=False, svd_solver="auto")
 pca_coeffs = skl_pca.fit_transform(dataset_input)
 pca_comps = skl_pca.components_
-pca_reconstructed = skl_pca.inverse_transform(pca_coeffs[:, :pca_rec_num])
+pca_reconstructed = np.dot(pca_coeffs[:, pca_rec], pca_comps[pca_rec]) + skl_pca.mean_
+
 print(pca_coeffs.shape)
 print(pca_comps.shape)
 print(pca_reconstructed.shape)
