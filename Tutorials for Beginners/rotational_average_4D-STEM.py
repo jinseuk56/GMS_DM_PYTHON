@@ -1,7 +1,7 @@
 # Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# last update : 20210112
+# last update : 20210117
 # rotational average of all DPs in 4D-STEM data
 
 
@@ -123,6 +123,7 @@ print(np.max(stack_4d_cropped))
 print(np.min(stack_4d_cropped))
 print(np.mean(stack_4d_cropped))
 
+pacbed = np.mean(stack_4d_cropped, axis=(0,1))
 
 #find center position
 q_text = """Select one option for finding the center position.
@@ -134,7 +135,7 @@ q_check = int(input(q_text))
 cb = int(input("size of the fitting box (data index): "))
 
 if q_check == 1:
-	pacbed = np.mean(stack_4d_cropped, axis=(0,1))
+
 	ct = gaussian_center(pacbed, cbox_edge=cb)
 	print("center position")
 	print(ct)
@@ -171,6 +172,11 @@ elif q_check == 2:
 else:
 	print("wrong input !")
 	exit()
+
+fig1, ax1 = plt.subplots(1, 1, figsize=(5, 5))
+ax1.imshow(pacbed, cmap="gray")
+ax1.scatter(ct[1], ct[0], c="red")
+ax1.axis("off")
 
 # radial average of DPs (not variance, intensity direcltly, RDF?)
 print("obtain the rotational average of all DPs")

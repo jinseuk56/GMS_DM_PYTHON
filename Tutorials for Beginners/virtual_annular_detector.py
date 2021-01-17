@@ -1,7 +1,7 @@
 # Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# last update : 20210113
+# last update : 20210117
 # virtual annular detector for 4D-STEM data
 
 
@@ -96,6 +96,8 @@ print(np.max(stack_4d_cropped))
 print(np.min(stack_4d_cropped))
 print(np.mean(stack_4d_cropped))
 
+pacbed = np.mean(stack_4d_cropped, axis=(0,1))
+
 check_center = input("Do you want to input the center position manually? (Y / N): ")
 if check_center == "Y":
 	x_ct = float(input("write the x index of the center: "))
@@ -113,7 +115,6 @@ elif check_center=="N":
 	cb = int(input("size of the fitting box (data index): "))
 
 	if q_check == 1:
-		pacbed = np.mean(stack_4d_cropped, axis=(0,1))
 		ct = gaussian_center(pacbed, cbox_edge=cb)
 		print("center position")
 		print(ct)
@@ -159,6 +160,10 @@ else:
 	print("*"*50)
 	exit()
 
+fig2, ax2 = plt.subplots(1, 1, figsize=(5, 5))
+ax2.imshow(pacbed, cmap="gray")
+ax2.scatter(ct[1], ct[0], c="red")
+ax2.axis("off")
 
 def max_rad(shape, center=None):
     y, x = np.indices(shape)
@@ -192,9 +197,6 @@ mrad_per_pixel = 1.0
 radii = np.arange(max_rad(f_shape[2:], center=ct)) * mrad_per_pixel
 print("maximum angle = %.2f"%(radii[-1]))
 
-pacbed = np.mean(stack_4d_cropped, axis=(0,1))
-print(pacbed.shape)
-
 check_det = input("Do you want to a STEM image for a specific annular region ? (Y or N) ")
 
 if check_det == "Y":
@@ -224,8 +226,7 @@ if check_det == "Y":
 	output_img = DM.CreateImage(img_temp.copy())
 	output_img.SetName("Annular Dark-filed STEM image")
 	output_img.ShowImage()
-
-	plt.show()
+	
 
 elif check_det == "N":
 	detector = []
@@ -263,3 +264,5 @@ else:
 pacbed_dm = DM.CreateImage(pacbed.copy())
 pacbed_dm.SetName("PACBED")
 pacbed_dm.ShowImage()
+
+plt.show()
