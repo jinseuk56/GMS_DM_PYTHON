@@ -1,8 +1,12 @@
 # Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# last update : 20210226
+# last update : 20210304
 # load EMPAD data (.raw)
+# it does not work properly when the data shape is (256, 256, 128, 128)
+# however, it will work as a stopgap when the data type is converted into uint16 
+# this problem has not been figured out; 
+# thus, it is recommended to use instead "load_EMPAD.s" (DM script) when the data shape is (256, 256, 128, 128)
 
 
 # ********************************************************************************
@@ -38,7 +42,12 @@ def fourd_roll_axis(stack):
     stack = np.rollaxis(np.rollaxis(stack, 2, 0), 3, 1)
     return stack
 
-
+def uint16astype(img):
+    img = img - np.min(img)
+    img = img / np.max(img)
+    img = img * (2**16-1)
+    return img.astype(np.uint16)
+    
 raw_adr = tkf.askopenfilename()
 print(raw_adr)
 datatype = "float32"
@@ -74,10 +83,13 @@ stack_4d = load_binary_4D_stack(raw_adr, datatype, o_shape, f_shape, log_scale=F
 print(np.max(stack_4d))
 print(np.min(stack_4d))
 print(np.mean(stack_4d))
-#print(np.median(stack_4d))
 
 additional_check = input("""Do you also want to inverse the dimensions of 4D-STEM data? (Y or N): 
 (a, b, c, d) -> (c, d, a, b)""")
+
+if shape_check == 1:
+	stack_4d = uint16astype(stack_4d)
+
 
 if additional_check == "Y":
 	stack_tmp = DM.CreateImage(stack_4d.copy())
@@ -85,7 +97,12 @@ if additional_check == "Y":
 	stack_tmp.ShowImage()
 	
 stack_4d = fourd_roll_axis(stack_4d)
+print(np.max(stack_4d))
+print(np.min(stack_4d))
+print(np.mean(stack_4d))
+
 stack_dm = DM.CreateImage(stack_4d.copy())
+
 del stack_4d
 stack_dm.SetName("4D-STEM data")
 stack_dm.ShowImage()
