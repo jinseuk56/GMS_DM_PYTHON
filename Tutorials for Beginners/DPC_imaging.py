@@ -27,34 +27,6 @@ from matplotlib.colors import hsv_to_rgb
 print("Libraries have been imported completely")
 #####################################################################
 
-##refer to https://github.com/jinseuk56/GMS_DM_PYTHON/blob/main/Tutorials%20for%20Beginners/virtual_annular_detector.py
-
-def radial_indices(shape, radial_range, scale, center=None):
-    y, x = np.indices(shape)
-    if not center:
-        center = np.array([(y.max()-y.min())/2.0, (x.max()-x.min())/2.0])
-    r = np.hypot(y - center[0], x - center[1]) * scale
-    ri = np.ones(r.shape)
-    
-    if len(np.unique(radial_range)) > 1:
-        ri[np.where(r <= radial_range[0])] = 0
-        ri[np.where(r > radial_range[1])] = 0
-        
-    else:
-        r = np.round(r)
-        ri[np.where(r != round(radial_range[0]))] = 0
-    
-    return ri
-    
-def max_rad(shape, center=None):
-    y, x = np.indices(shape)
-    if not center:
-        center = np.array([(x.max()-x.min())/2.0, (y.max()-y.min())/2.0])
-    
-    r = np.hypot(y - center[0], x - center[1])
-    
-    return np.max(r)
-
 ##refer to https://github.com/hachteja/GetDPC/blob/master/getdpc/GetDPC.py
 
 def CalibrateRonchigram(dat4d: np.ndarray, conv: float = 32, t: float = 0.3) -> typing.Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, np.ndarray, np.ndarray]:
