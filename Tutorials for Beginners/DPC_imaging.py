@@ -1,12 +1,12 @@
 # Ingyu Yoo
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# last update : 20210303
+# last update : 20210308
 # DPC imaging for 4D-STEM Data
 # This code is based on the following publication & code
 # The core functions of GetDPC, "https://github.com/hachteja/GetDPC", were copied
 # J.A. Hachtel, J.C. Idrobo, and M. Chi, Adv. Struct. Chem. Imag. 4 (2018)
-# The jupyter notebook for demonstration in GetDPC were re-arranged so that it could be also applied to 4D-STEM data in GMS 3
+# The jupyter notebook for demonstration of GetDPC were re-arranged so that it could be also applied to 4D-STEM data in GMS 3
 
 
 #####################################################################
@@ -197,6 +197,7 @@ dummy = 10.0
 R, RonchiCenterX, RonchiCenterY, Ronchipixcal, BFdiskIm, absct, BFEdgeIm = CalibrateRonchigram(dat4d,conv=dummy,t=0.3)
 print("center of the Ronchigram: %f (x), %f (y)"%(RonchiCenterX, RonchiCenterY))
 Ronchipixcal = eval(input("Write a calibration value for the detector angle (mrad per pixel)"))
+imcal = eval(input("Write a calibration value for STEM image (Angstrom per pixel)"))
 
 showtype = int(input(""" Choose a result type
 1) DM file
@@ -226,15 +227,16 @@ a[3].set_title('Average BF Disk Edge',fontsize=6)
 a[3].add_patch(Rectangle((4,dat4d.shape[2]-7),50/Ronchipixcal,3,fc='w',ec='None'))
 plt.setp(a, xticks=[],yticks=[])
 
+
+"""
 ### 2. Use 4D Dataset to reconstruct images from arbitrary detector
-imcal = eval(input("Write a calibration value for STEM image (nm per pixel)"))
 BF_outer = 10.0 #mrad
 BF = GetDetectorImage(dat4d,RonchiCenterX,RonchiCenterY,Ronchipixcal,0.,BF_outer)
 print("BF shape",BF.shape)
-inner_ind = int(input("""
-To get an as-acquired stem image profile, inner and outer angles for a virtual detector are needed.
-First, write the index of the inner angle of the virtual detector (positive integer): 
-"""))
+inner_ind = int(input("\n
+To get an as-acquired stem image profile, inner and outer angles for a virtual detector are needed.\n
+First, write the index of the inner angle of the virtual detector (positive integer): \n
+"))
 outer_ind = int(input("Next, write the index of the outer angle of the virtual detector (positive integer):"))
 ADF_STEM = GetDetectorImage(dat4d,RonchiCenterX,RonchiCenterY,Ronchipixcal,inner_ind*Ronchipixcal,outer_ind*Ronchipixcal)
 if showtype == 2 :
@@ -254,6 +256,7 @@ elif showtype == 1 :
     im2_2.SetName('Reconstructed BF (0-%d mrad)'%BF_outer)
     im2_1.ShowImage()
     im2_2.ShowImage()
+"""
 
 ### 3. Calculate Center of Mass Shifts (No Rotation)
 
@@ -271,15 +274,19 @@ if Checkbox2 == "Y":
             f3,a3=plt.subplots(2,2,dpi=200)
             a3[0,0].imshow(CoMX)
             a3[0,0].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
+            a3[0,0].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
             a3[0,0].set_title('CoM Shifts-X (No PL Rotation)',fontsize=6)
             a3[0,1].imshow(CoMY)
             a3[0,1].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
+            a3[0,1].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
             a3[0,1].set_title('CoM Shifts-Y (No PL Rotation)',fontsize=6)
             a3[1,0].imshow(rCoMX)
             a3[1,0].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
+            a3[1,0].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
             a3[1,0].set_title('CoM Shifts-X (w/ PL Rotation)',fontsize=6)
             a3[1,1].imshow(rCoMY)
             a3[1,1].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
+            a3[1,1].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
             a3[1,1].set_title('CoM Shifts-Y (w/ PL Rotation)',fontsize=6)
             plt.setp(a3, xticks=[],yticks=[])
         elif showtype == 1:
@@ -321,14 +328,24 @@ if "1" in checkbox3:
         f6,a6=plt.subplots(1,3,dpi=200)
         a6[0].imshow(EIm)
         a6[0].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
+        a6[0].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
         a6[0].set_title('Electric Field Magnitude',fontsize=6)
         a6[1].imshow(EDirIm)
         a6[1].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
+        a6[1].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
         a6[1].set_title('Electric Field Directions',fontsize=6)
         a6[2].imshow(EDirLeg)
         a6[2].set_title('Field Directions Legend',fontsize=6)
         plt.setp(a6, xticks=[],yticks=[])
     elif showtype == 1:
+        f6,a6=plt.subplots(1,2,dpi=200)
+        a6[0].imshow(EDirIm)
+        a6[0].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
+        a6[0].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
+        a6[0].set_title('Electric Field Directions',fontsize=6)
+        a6[1].imshow(EDirLeg)
+        a6[1].set_title('Field Directions Legend',fontsize=6)
+        plt.setp(a6, xticks=[],yticks=[])
         im5_1 = DM.CreateImage(EIm.copy())
         im5_1.SetName('Electric Field Magnitude')
         im5_1.ShowImage()
@@ -343,6 +360,7 @@ if "2" in checkbox3:
         f7,a7=plt.subplots()
         a7.imshow(RhoIm,cmap=cm.seismic,vmin=-np.amax(np.abs(RhoIm)),vmax=np.amax(np.abs(RhoIm)))
         a7.add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
+        a7.text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
         a7.set_title('Charge Density',fontsize=8)
         plt.setp(a7, xticks=[],yticks=[])
         
@@ -365,9 +383,11 @@ Write two positive real numbers between 0 and 1 with a comma for high-pass filte
         f8,a8=plt.subplots(1,2,dpi=200)
         a8[0].imshow(VImhp1,cmap=cm.hot)
         a8[0].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
+        a8[0].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
         a8[0].set_title('Atomic Potential (w/ High Pass {})'.format(hpassnum1),fontsize=6)
         a8[1].imshow(VImhp2,cmap=cm.hot)
         a8[1].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
+        a8[1].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
         a8[1].set_title('Atomic Potential (w/ High Pass {})'.format(hpassnum2),fontsize=6)
         plt.setp(a8, xticks=[],yticks=[])
         
