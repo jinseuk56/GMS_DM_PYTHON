@@ -1,10 +1,10 @@
-// 20201207
+// 20210322
 // JINSEOK RYU (jinseuk56@gmail.com)
 // Electron Microscopy and Spectroscopy Lab.
 // Dept. of Materials Science and Engineering
 // Seoul National University
-// binary data (4D-STEM from EMPAD, Thermo Fisher) -> 4D stack image
-// You must know the original dimensions of the 4D-STEM data
+// binary data (raw data from EMPAD, Thermo Fisher) -> 4D stack image
+// You must know the original shape of 4D-STEM data
 
 Object file_stream
 Image img
@@ -24,8 +24,7 @@ CloseFile(file_ID)
 
 image rolled
 
-rolled = img.sliceN(4, 4, 0, 0, 0, 0, 2, sx, 1, 3, sy, 1, 0, dsx, 1, 1, dsy, 1).imageclone()
-rolled.setname("2D_in_2D_stack_image")
+rolled := img.sliceN(4, 4, 0, 0, 0, 0, 2, sx, 1, 3, sy, 1, 0, dsx, 1, 1, dsy, 1)
 
 closeimage(img)
 rolled.showimage()
