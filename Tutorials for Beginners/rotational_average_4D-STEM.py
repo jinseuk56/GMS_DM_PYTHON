@@ -112,6 +112,7 @@ print(fd)
 
 print("loading 4D-STEM data")
 stack_4d_cropped = fourd_roll_axis(fd.GetNumArray())
+stack_4d_cropped = np.nan_to_num(stack_4d_cropped)
 print(stack_4d_cropped.shape)
 print(np.max(stack_4d_cropped))
 print(np.min(stack_4d_cropped))

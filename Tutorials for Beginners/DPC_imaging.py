@@ -183,6 +183,7 @@ def GetPotential(dpcx: np.ndarray, dpcy: np.ndarray, *, rotation: float = 0, hpa
 ### 0 . Get 4d data & virtual detector
 image_4d = DM.GetFrontImage()
 print("load 4D-STEM data")
+image_4d = np.nan_to_num(image_4d)
 dat4d = np.rollaxis(np.rollaxis(image_4d.GetNumArray(), 2, 0), 3, 1)
 print(dat4d.shape)
 print(np.max(dat4d))
