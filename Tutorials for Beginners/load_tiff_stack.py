@@ -32,6 +32,9 @@ if len(data.shape) == 4:
 elif len(data.shape) == 3:
 	data = threed_roll_axis(data)
 	
+elif len(data.shape) == 2:
+	data = np.rollaxis(data, 0, 2)
+	
 data_dm = DM.CreateImage(data.copy())
 data_dm.SetName("tif file loaded")
 data_dm.ShowImage()
