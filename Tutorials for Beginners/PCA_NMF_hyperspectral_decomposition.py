@@ -1,8 +1,11 @@
 # Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# 20210226
+# 20210511
 # basic applications of PCA or NMF to hyperspectral data (e.g. EELS-SI)
+# some parameters in PCA and NMF were pre-determined
+# please visit the documentation page of Scikit-learn package for detailed description of PCA and NMF
+# https://scikit-learn.org/stable/index.html
 
 
 # ********************************************************************************
@@ -82,17 +85,17 @@ q_text = """Select one option.
 decomp_check = int(input(q_text))
 
 num_comp = int(input("How many loading vectors do you want to extract ?"))
-num_rec = int(input("How many loading vectors do you want to use when reconstructing the data ?"))
 
 if decomp_check == 1:
 	# ********************************************************************************
 	pca_num_comp = num_comp
-	pca_rec = np.arange(num_rec)
-	#pca_rec = np.array([0, 1])
 	skl_pca = PCA(n_components=pca_num_comp, whiten=False, svd_solver="auto")
 	pca_coeffs = skl_pca.fit_transform(dataset_input)
 	pca_comps = skl_pca.components_
-	pca_reconstructed = np.dot(pca_coeffs[:, pca_rec], pca_comps[pca_rec]) + skl_pca.mean_
+
+
+	num_rec = int(input("How many loading vectors do you want to use when reconstructing the data ?"))
+	pca_reconstructed = np.dot(pca_coeffs[:, :num_rec], pca_comps[:num_rec]) + skl_pca.mean_
 
 	print(pca_coeffs.shape)
 	print(pca_comps.shape)
@@ -127,20 +130,13 @@ if decomp_check == 1:
 elif decomp_check == 2:
 	# ********************************************************************************
 	nmf_num_comp = num_comp
-	nmf_rec = np.arange(num_rec)
-	#nmf_rec = np.array([0,1])
 	skl_nmf = NMF(n_components=nmf_num_comp, init="nndsvda", solver="mu", max_iter=1000, 
 				 verbose=True, beta_loss="frobenius", l1_ratio=0.0, alpha=0.0)
 
 	nmf_coeffs = skl_nmf.fit_transform(dataset_input)
 	print(nmf_coeffs[:, [1,2]].shape)
 	nmf_comps = skl_nmf.components_
-	nmf_reconstructed = np.dot(nmf_coeffs[:, nmf_rec], nmf_comps[nmf_rec])
-	print(nmf_coeffs.shape)
-	print(nmf_comps.shape)
-	print(nmf_reconstructed.shape)
-	# ********************************************************************************
-
+	
 	# ********************************************************************************
 	nmf_comps_tmp = np.rollaxis(nmf_comps.reshape(-1, 1, depth), 2, 0)
 	nmf_comps_dm = DM.CreateImage(nmf_comps_tmp.copy())
@@ -149,15 +145,22 @@ elif decomp_check == 2:
 	nmf_coeffs_tmp = np.reshape(nmf_coeffs, (data_shape[0], data_shape[1], nmf_num_comp, 1))
 	nmf_coeffs_dm = DM.CreateImage(nmf_coeffs_tmp.copy())
 	nmf_coeffs_dm.SetName("NMF coefficient maps")
+	
+	nmf_comps_dm.ShowImage()
+	nmf_coeffs_dm.ShowImage()
+	
+	# ********************************************************************************
+
+	nmf_reconstructed = np.dot(nmf_coeffs, nmf_comps)
+	print(nmf_coeffs.shape)
+	print(nmf_comps.shape)
+	print(nmf_reconstructed.shape)
+
 
 	nmf_rec_tmp = np.rollaxis(np.reshape(nmf_reconstructed, (data_shape[0], data_shape[1], -1)), 2, 0)
 	nmf_rec_dm = DM.CreateImage(nmf_rec_tmp.copy())
 	nmf_rec_dm.SetName("NMF reconstructed SI")
-	# ********************************************************************************
 
-	# ********************************************************************************
-	nmf_comps_dm.ShowImage()
-	nmf_coeffs_dm.ShowImage()
 	nmf_rec_dm.ShowImage()
 	# ********************************************************************************
 
