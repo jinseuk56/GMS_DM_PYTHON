@@ -32,15 +32,38 @@ print(file_adr)
 if file_adr[-3:] == "ali":
     img = hys.load(file_adr)
     print(img)
+    
+    origin0 = img.axes_manager[0].offset
+    scale0 = img.axes_manager[0].scale
+    unit0 = img.axes_manager[0].units
+    print(origin0, scale0, unit0)
+
+    origin1 = img.axes_manager[1].offset
+    scale1 = img.axes_manager[1].scale
+    unit1 = img.axes_manager[1].units
+    print(origin1, scale1, unit1)
+
+    origin2 = img.axes_manager[2].offset
+    scale2 = img.axes_manager[2].scale
+    unit2 = img.axes_manager[2].units
+    print(origin2, scale2, unit2)
+    print(type(origin2), type(scale2), type(unit2))
+
     data = img.data.copy()
     tilt_angles = img.original_metadata["fei header"]["a_tilt"][:len(data)]
     print("tilt angles (degree)")
     print(tilt_angles)
     tilt_rad = tilt_angles * np.pi / 180
     
+    print(type(tilt_angles[0]), type(tilt_angles[1]-tilt_angles[0]), type("degree"))
+    
     data_dm = DM.CreateImage(data.copy())
     data_dm.SetName("tilt series")
-    print(data_dm)
+    
+    data_dm.SetDimensionCalibration(0, origin1, scale1, unit1, 0)
+    data_dm.SetDimensionCalibration(1, origin2, scale2, unit2, 0)
+    data_dm.SetDimensionCalibration(2, float(tilt_angles[0]), float(tilt_angles[1]-tilt_angles[0]), "degree", 0)
+    
     data_dm.ShowImage()
     
 elif file_adr[-3:] == "mrc":

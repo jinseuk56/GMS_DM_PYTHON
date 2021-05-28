@@ -110,6 +110,15 @@ def fourd_roll_axis(stack):
 fd = DM.GetFrontImage()
 print(fd)
 
+origin0, scale0, unit0 = fd.GetDimensionCalibration(0, 0)
+print(origin0, scale0, unit0)
+origin1, scale1, unit1 = fd.GetDimensionCalibration(1, 0)
+print(origin1, scale1, unit1)
+origin2, scale2, unit2 = fd.GetDimensionCalibration(2, 0)
+print(origin2, scale2, unit2)
+origin3, scale3, unit3 = fd.GetDimensionCalibration(3, 0)
+print(origin3, scale3, unit3)
+
 print("loading 4D-STEM data")
 stack_4d_cropped = fourd_roll_axis(fd.GetNumArray())
 stack_4d_cropped = np.nan_to_num(stack_4d_cropped)
@@ -200,7 +209,9 @@ radial_avg_stack = np.rollaxis(radial_avg_stack, 2, 0)
 print(radial_avg_stack.shape)
 ravg_dm = DM.CreateImage(radial_avg_stack.copy())
 ravg_dm.SetName("rotational average spectrum image")
-
+ravg_dm.SetDimensionCalibration(0, origin0, scale0, unit0, 0)
+ravg_dm.SetDimensionCalibration(1, origin1, scale1, unit1, 0)
+ravg_dm.SetDimensionCalibration(2, 0, scale2, unit2, 0)
 ravg_dm.ShowImage()
 
 plt.show()
