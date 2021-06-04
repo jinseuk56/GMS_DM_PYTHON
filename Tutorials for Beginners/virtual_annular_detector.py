@@ -1,7 +1,7 @@
 # Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# last update : 20210226
+# last update : 20210604
 # virtual STEM imaging for 4D-STEM data
 
 
@@ -80,6 +80,15 @@ def fourd_roll_axis(stack):
 fd = DM.GetFrontImage()
 print(fd)
 
+origin0, scale0, unit0 = fd.GetDimensionCalibration(0, 0)
+print(origin0, scale0, unit0)
+origin1, scale1, unit1 = fd.GetDimensionCalibration(1, 0)
+print(origin1, scale1, unit1)
+origin2, scale2, unit2 = fd.GetDimensionCalibration(2, 0)
+print(origin2, scale2, unit2)
+origin3, scale3, unit3 = fd.GetDimensionCalibration(3, 0)
+print(origin3, scale3, unit3)
+
 print("loading 4D-STEM data")
 stack_4d_cropped = fourd_roll_axis(fd.GetNumArray())
 stack_4d_cropped = np.nan_to_num(stack_4d_cropped)
@@ -108,43 +117,22 @@ elif check_center=="N":
 	#find center position
 	q_text = """Select one option for finding the center position.
 	1: Gaussian fitting - PACBED
-	2: Gaussian fitting - each DP"""
+	2: Center of mass - PACBED"""
 
 	q_check = int(input(q_text))
 
-	cb = int(input("size of the fitting box (data index): "))
-
 	if q_check == 1:
+		cb = int(input("size of the fitting box (data index): "))
 		ct = gaussian_center(pacbed, cbox_edge=cb)
 		print("center position")
 		print(ct)
 
 	elif q_check == 2:
-		print("find the center position")
-		center_pos = []
-		for i in range(stack_4d_cropped.shape[0]):
-			for j in range(stack_4d_cropped.shape[1]):
-				center_pos.append(gaussian_center(stack_4d_cropped[i, j], cbox_edge=cb))
-			  
-		center_pos = np.asarray(center_pos)
-		center_pos = np.reshape(center_pos, (stack_4d_cropped.shape[0], stack_4d_cropped.shape[1], -1))
-		center_mean = np.mean(center_pos, axis=(0, 1))
-
-
-		fig, ax = plt.subplots(1,2, figsize=(10, 5))
-		ax[0].hist(center_pos[:, :, 0].flatten(), bins=100, density=True, color="orange", label="center y position")
-		ax[0].hist(center_pos[:, :, 1].flatten(), bins=100, density=True, color="gray", alpha=0.5, label="center x position")
-		ax[0].set_title("distribution of center positions")
-		ax[0].grid()
-		ax[0].legend()
-
-		ax[1].scatter(center_pos[:, :, 1], center_pos[:, :, 0], s=10.0, alpha=0.5)
-		ax[1].grid()
-		ax[1].scatter(center_mean[1], center_mean[0], s=20, c="red")
-		ax[1].set_xlabel("center x position", fontsize=20)
-		ax[1].set_ylabel("center y position", fontsize=20)
+		Y, X = np.indices(pacbed.shape)
+		com_y = np.sum(pacbed * Y) / np.sum(pacbed)
+		com_x = np.sum(pacbed * X) / np.sum(pacbed)
+		ct = [com_y, com_x]
 		
-		ct = center_mean.tolist()
 		print("center position")
 		print(ct)
 		
@@ -193,7 +181,7 @@ def radial_indices(shape, radial_range, scale, center=None):
     return ri
 
 
-mrad_per_pixel = 1.0
+mrad_per_pixel = 1
 radii = np.arange(max_rad(f_shape[2:], center=ct)) * mrad_per_pixel
 print("maximum angle = %.2f"%(radii[-1]))
 
@@ -203,28 +191,16 @@ if check_det == "Y":
 	det_inner_ind = int(input("index of the inner angle (positive integer): "))
 	det_outer_ind = int(input("index of the outer angle (positive integer): "))
 
-	fig1, ax1 = plt.subplots(1, 3, figsize=(10, 5))
-	ri = radial_indices(f_shape[2:], [det_inner_ind, det_outer_ind], mrad_per_pixel, center=ct)
-
-	ax1[0].imshow(ri, cmap="gray")
-	ax1[0].axis("off")
-
-	ax1[1].imshow(pacbed, cmap="gray")
-	ax1[1].imshow(ri, cmap="Reds", alpha=0.3)
-	ax1[1].axis("off")
-
-	img_temp = np.sum(np.multiply(stack_4d_cropped, ri), axis=(2, 3))
-	ax1[2].imshow(img_temp, cmap="afmhot")
-	ax1[2].axis("off")
-
-	fig1.tight_layout()
-	
 	det_img = DM.CreateImage(ri.copy())
 	det_img.SetName("Detector")
+	det_img.SetDimensionCalibration(0, origin2, scale2, unit2, 0)
+	det_img.SetDimensionCalibration(1, origin3, scale3, unit3, 0)
 	det_img.ShowImage()
 
 	output_img = DM.CreateImage(img_temp.copy())
 	output_img.SetName("Annular Dark-filed STEM image")
+	output_img.SetDimensionCalibration(0, origin0, scale0, unit0, 0)
+	output_img.SetDimensionCalibration(1, origin1, scale1, unit1, 0)
 	output_img.ShowImage()
 	
 
@@ -248,10 +224,14 @@ elif check_det == "N":
 	
 	det_img = DM.CreateImage(detector.copy())
 	det_img.SetName("Virtual Detector")
+	det_img.SetDimensionCalibration(2, origin2, scale2, unit2, 0)
+	det_img.SetDimensionCalibration(3, origin3, scale3, unit3, 0)
 	det_img.ShowImage()
 	
 	stem = DM.CreateImage(stem_img.copy())
 	stem.SetName("STEM image")
+	stem.SetDimensionCalibration(2, origin0, scale0, unit0, 0)
+	stem.SetDimensionCalibration(3, origin1, scale1, unit1, 0)
 	stem.ShowImage()
 	
 
@@ -263,6 +243,8 @@ else:
 
 pacbed_dm = DM.CreateImage(pacbed.copy())
 pacbed_dm.SetName("PACBED")
+pacbed_dm.SetDimensionCalibration(0, origin2, scale2, unit2, 0)
+pacbed_dm.SetDimensionCalibration(1, origin3, scale3, unit3, 0)
 pacbed_dm.ShowImage()
 
 plt.show()

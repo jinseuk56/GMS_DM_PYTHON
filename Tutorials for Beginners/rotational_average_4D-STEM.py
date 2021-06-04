@@ -136,51 +136,31 @@ print(np.mean(stack_4d_cropped))
 pacbed = np.mean(stack_4d_cropped, axis=(0,1))
 
 #find center position
-q_text = """Select one option for finding center positions.
+q_text = """Select one option for finding the center position.
 1: Gaussian fitting - PACBED
-2: Gaussian fitting - each DP"""
+2: Center of mass - PACBED"""
 
 q_check = int(input(q_text))
 
-cb = int(input("size of the fitting box (data index): "))
-
 if q_check == 1:
-
+	cb = int(input("size of the fitting box (data index): "))
 	ct = gaussian_center(pacbed, cbox_edge=cb)
 	print("center position")
 	print(ct)
 
 elif q_check == 2:
-	print("find the center position")
-	center_pos = []
-	for i in range(stack_4d_cropped.shape[0]):
-		for j in range(stack_4d_cropped.shape[1]):
-			center_pos.append(gaussian_center(stack_4d_cropped[i, j], cbox_edge=cb))
-		  
-	center_pos = np.asarray(center_pos)
-	center_pos = np.reshape(center_pos, (stack_4d_cropped.shape[0], stack_4d_cropped.shape[1], -1))
-	center_mean = np.mean(center_pos, axis=(0, 1))
-
-
-	fig, ax = plt.subplots(1,2, figsize=(10, 5))
-	ax[0].hist(center_pos[:, :, 0].flatten(), bins=100, density=True, color="orange", label="center y position")
-	ax[0].hist(center_pos[:, :, 1].flatten(), bins=100, density=True, color="gray", alpha=0.5, label="center x position")
-	ax[0].set_title("distribution of center positions")
-	ax[0].grid()
-	ax[0].legend()
-
-	ax[1].scatter(center_pos[:, :, 1], center_pos[:, :, 0], s=10.0, alpha=0.5)
-	ax[1].grid()
-	ax[1].scatter(center_mean[1], center_mean[0], s=20, c="red")
-	ax[1].set_xlabel("center x position", fontsize=20)
-	ax[1].set_ylabel("center y position", fontsize=20)
-	
-	ct = center_mean.tolist()
+	Y, X = np.indices(pacbed.shape)
+	com_y = np.sum(pacbed * Y) / np.sum(pacbed)
+	com_x = np.sum(pacbed * X) / np.sum(pacbed)
+	ct = [com_y, com_x]
+		
 	print("center position")
 	print(ct)
-	
+		
 else:
+	print("*"*50)
 	print("wrong input !")
+	print("*"*50)
 	exit()
 
 fig1, ax1 = plt.subplots(1, 1, figsize=(5, 5))
