@@ -1,403 +1,401 @@
-# Ingyu Yoo
+# Ingyu Yoo, Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# last update : 20210308
-# DPC imaging for 4D-STEM Data
-# This code is based on the following publication & code
-# The core functions of GetDPC, "https://github.com/hachteja/GetDPC", were copied
-# J.A. Hachtel, J.C. Idrobo, and M. Chi, Adv. Struct. Chem. Imag. 4 (2018)
-# The jupyter notebook for demonstration of GetDPC were re-arranged so that it could be also applied to 4D-STEM data in GMS 3
+# last update : 20210630
+# differential phase contrast imaging for 4D-STEM data
 
-
-#####################################################################
-print("Execute Python script in GMS 3")
-
-import DigitalMicrograph as DM
-import typing
-from scipy import optimize
 import numpy as np
+from scipy import optimize
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
+
+class dpc_python():
+    
+    def __init__(self, f_stack, ang_per_pixel, mrad_per_pixel):
+        self.original_stack = f_stack
+        self.original_shape = f_stack.shape
+        self.original_pacbed = np.mean(self.original_stack, axis=(0, 1))
+        self.ang_per_pixel = ang_per_pixel
+        self.mrad_per_pixel = mrad_per_pixel
+        
+        print("the shape of the data =", self.original_shape)
+    
+    def find_center(self, com=True, gaussian=False):
+        
+        if com and gaussian:
+            print("Warning! Choose only one option to find the center")
+        
+        if not com and not gaussian:
+            print("Warning! Choose at least one option to find the center")
+        
+        Y, X = np.indices(self.original_pacbed.shape)
+        com_y = np.sum(self.original_pacbed * Y) / np.sum(self.original_pacbed)
+        com_x = np.sum(self.original_pacbed * X) / np.sum(self.original_pacbed)
+        self.com_ct = [com_y, com_x]
+        
+        (_, center_y, center_x, _, _) = fitgaussian(self.original_pacbed)
+        self.gauss_ct = [center_y, center_x]
+        
+        if com:
+            self.ct=self.com_ct
+        
+        else:
+            self.ct=self.gauss_ct
+        
+    def disk_extract(self, buffer_size=0):
+        grad = np.gradient(self.original_pacbed)
+        grad_map = grad[0]**2 + grad[1] **2
+        grad_map = grad_map / np.max(grad_map)
+        
+        max_ind = np.unravel_index(np.argmax(grad_map, axis=None), grad_map.shape)
+        self.least_R = ((max_ind[0]-self.ct[0])**2 + (max_ind[1]-self.ct[1])**2)**(1/2)
+        
+        print("radius of the BF disk = %.2f mrad"%(self.mrad_per_pixel*self.least_R))
+        
+        self.ct_ind  = np.around(self.ct).astype(int)
+        self.cropped_size = np.around(self.least_R + buffer_size).astype(int)
+        
+        print("radius of the RoI = %.2f mrad"%(self.mrad_per_pixel*self.cropped_size))
+        
+        if self.cropped_size > self.ct_ind[0] or self.cropped_size > self.ct_ind[1]:
+            self.cropped_size = np.min(ct_ind)
+        
+        self.c_ct = [self.cropped_size, self.cropped_size]
+        self.c_stack = self.original_stack[:, :, self.ct_ind[0]-self.cropped_size:self.ct_ind[0]+self.cropped_size+1, 
+                               self.ct_ind[1]-self.cropped_size:self.ct_ind[1]+self.cropped_size+1].copy()
+        self.c_shape = self.c_stack.shape
+        self.c_pacbed = np.mean(self.c_stack, axis=(0, 1))
+        
+    def virtual_stem(self, BF, ADF):
+        self.BF_detector = radial_indices(self.original_pacbed.shape, BF, self.mrad_per_pixel, center=self.ct)
+        self.BF_stem = np.sum(np.multiply(self.original_stack, self.BF_detector), axis=(2, 3))
+        
+        self.ADF_detector = radial_indices(self.original_pacbed.shape, ADF, self.mrad_per_pixel, center=self.ct)
+        self.ADF_stem = np.sum(np.multiply(self.original_stack, self.ADF_detector), axis=(2, 3))
+        
+    def DPC(self, correct_rotation=True, n_theta=100, hpass=0.0, lpass=0.0):
+        """
+        Hachtel, J.A., J.C. Idrobo, and M. Chi, Adv Struct Chem Imaging, 2018. 4(1): p. 10. (https://github.com/hachteja/GetDPC)
+        Lazic, I., E.G.T. Bosch, and S. Lazar, Ultramicroscopy, 2016. 160: p. 265-280.
+        Savitzky, B.H., et al., arXiv preprint arXiv:2003.09523, 2020. (https://github.com/py4dstem/py4DSTEM)
+        """
+        
+        Y, X = np.indices(test.c_pacbed.shape)
+        self.ysh = np.sum(test.c_stack * Y, axis=(2, 3)) / np.sum(test.c_stack, axis=(2, 3)) - test.c_ct[0]
+        self.xsh = np.sum(test.c_stack * X, axis=(2, 3)) / np.sum(test.c_stack, axis=(2, 3)) - test.c_ct[1]
+        
+        self.ysh -= np.mean(self.ysh)
+        self.xsh -= np.mean(self.xsh)
+        
+        if correct_rotation:
+            theta = np.linspace(-np.pi/2, np.pi/2, n_theta, endpoint=True)
+            self.div = []
+            self.curl = []
+            for t in theta:
+                r_ysh = self.xsh * np.sin(t) + self.ysh * np.cos(t)
+                r_xsh = self.xsh * np.cos(t) - self.ysh * np.sin(t)
+
+                gyy, gyx = np.gradient(r_ysh)
+                gxy, gxx = np.gradient(r_xsh)
+                shift_divergence = gyy + gxx
+                shift_curl = gyx - gxy
+
+                self.div.append(np.mean(shift_divergence**2))
+                self.curl.append(np.mean(shift_curl**2))
+                
+            self.c_theta = theta[np.argmin(self.curl)]
+            tmp_ysh = self.xsh * np.sin(self.c_theta) + self.ysh * np.cos(self.c_theta)
+            tmp_xsh = self.xsh * np.cos(self.c_theta) - self.ysh * np.sin(self.c_theta)
+            
+            self.ysh = tmp_ysh
+            self.xsh = tmp_xsh
+            
+        self.E_mag = np.sqrt(self.ysh**2 + self.xsh**2)
+        self.E_field_y = -self.ysh / np.max(self.E_mag)
+        self.E_field_x = -self.xsh / np.max(self.E_mag)
+        
+        self.charge_density = np.gradient(self.E_field_y)[0] + np.gradient(self.E_field_x)[1]
+        
+        self.potential = get_icom(self.ysh, self.xsh, hpass, lpass)
+
+#####################################################################################
+# https://scipy-cookbook.readthedocs.io/items/FittingData.html
+def gaussian(height, center_x, center_y, width_x, width_y):
+    """Returns a gaussian function with the given parameters"""
+    width_x = float(width_x)
+    width_y = float(width_y)
+    return lambda x,y: height*np.exp(
+                -(((center_x-x)/width_x)**2+((center_y-y)/width_y)**2)/2)
+
+def moments(data):
+    """Returns (height, x, y, width_x, width_y)
+    the gaussian parameters of a 2D distribution by calculating its
+    moments """
+    total = data.sum()
+    X, Y = np.indices(data.shape) # row, col
+    x = (X*data).sum()/total # row
+    y = (Y*data).sum()/total # col
+    col = data[:, int(y)]
+    width_x = np.sqrt(np.abs((np.arange(col.size)-y)**2*col).sum()/col.sum()) # row
+    row = data[int(x), :]
+    width_y = np.sqrt(np.abs((np.arange(row.size)-x)**2*row).sum()/row.sum()) # col
+    height = data.max()
+    return height, x, y, width_x, width_y
+
+def fitgaussian(data):
+    """Returns (height, x, y, width_x, width_y)
+    the gaussian parameters of a 2D distribution found by a fit"""
+    params = moments(data)
+    errorfunction = lambda p: np.ravel(gaussian(*p)(*np.indices(data.shape)) -
+                                 data)
+    p, success = optimize.leastsq(errorfunction, params)
+    return p
+#####################################################################################
+
+def radial_indices(shape, radial_range, scale, center=None):
+    y, x = np.indices(shape)
+    if not center:
+        center = np.array([(y.max()-y.min())/2.0, (x.max()-x.min())/2.0])
+    
+    r = np.hypot(y - center[0], x - center[1]) * scale
+    ri = np.ones(r.shape)
+    
+    if len(np.unique(radial_range)) > 1:
+        ri[np.where(r < radial_range[0])] = 0
+        ri[np.where(r > radial_range[1])] = 0
+        
+    else:
+        r = np.round(r)
+        ri[np.where(r != round(radial_range[0]))] = 0
+    
+    return ri
+
+def get_icom(ysh, xsh, hpass=0, lpass=0):
+    
+    FT_ysh = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(ysh)))
+    FT_xsh = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(xsh)))
+    
+    ky = np.fft.fftshift(np.fft.fftfreq(FT_ysh.shape[0])).reshape(-1, 1)
+    kx = np.fft.fftshift(np.fft.fftfreq(FT_xsh.shape[1])).reshape(1, -1)
+
+    k2 = ky**2 + kx**2
+    zero_ind = np.where(k2 == 0.0)
+    k2[zero_ind] = 1.0
+
+    FT_phase = (FT_ysh*ky + FT_xsh*kx) / (2*np.pi*1j*(hpass+k2) + lpass*k2)
+    FT_phase[zero_ind] = 0.0
+
+    Iicom = np.real(np.fft.ifftshift(np.fft.ifft2(np.fft.ifftshift(FT_phase))))
+    
+    return Iicom
+
+# Run with GMS 3
+print("Execute Python script in GMS 3")
+import DigitalMicrograph as DM
 import sys
 sys.argv.extend(['-a', ' '])
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
-from matplotlib.patches import Rectangle
-from pylab import cm
-from matplotlib.colors import hsv_to_rgb
 
-print("Libraries have been imported completely")
-#####################################################################
-
-##refer to https://github.com/hachteja/GetDPC/blob/master/getdpc/GetDPC.py
-
-def CalibrateRonchigram(dat4d: np.ndarray, conv: float = 32, t: float = 0.3) -> typing.Tuple[np.ndarray, np.ndarray, np.ndarray, float, float, np.ndarray, np.ndarray]:
-    """Find true center of Ronchigram, and pixels/mrad calibration
-
-    :param dat4d: 4D Dataset, 2-spatial, 2-diffraction dimensions
-    :param conv: Convergence Angle of Electron Probe in mrad
-    :param t: Threshhold for BF Disk (fraction of 1)
-    :return: center, calibrations
-    """
-    R = np.average(dat4d, axis=(0, 1))
-    Rn = (R - np.amin(R)) / np.ptp(R)
-    BFdisk = np.ones(R.shape) * (Rn > t)
-    absct = t * np.ptp(R)
-    rxx, ryy = np.meshgrid(np.arange(0, Rn.shape[1]), np.arange(0, Rn.shape[0]))
-    rcx, rcy = np.sum(BFdisk * rxx / np.sum(BFdisk)), np.sum(BFdisk * ryy / np.sum(BFdisk))
-    edge = (np.sum(np.abs(np.gradient(BFdisk)), axis=0)) > t
-    pixcal = np.average(np.sqrt((rxx - rcx) ** 2 + (ryy - rcy) ** 2)[edge]) / conv
-    return R, rcx, rcy, pixcal, BFdisk, absct, edge
-    
-def GetDetectorImage(dat4d: np.ndarray, RCX: float, RCY: float, RCal: float, RI: float = 0, RO: float = 32) -> np.ndarray:
-    """Reconstruct a detector image from the 4D Dataset
-
-    :param dat4d: 4D Dataset, 2-spatial, 2-diffraction dimensions
-    :param RCX: X Center of the Ronchigram (pixels)
-    :param RCY: Y Center of the Ronchigram (pixels)
-    :param RCal: Calibration of the Ronchigram (pixels/mrad)
-    :param RI: Inner Radius for CoM Measurement (mrad)
-    :param RO: Outer Radius for CoM Measurement (mrad)
-    :return detector image as ndarray
-    """
-    X, Y = np.meshgrid((np.arange(0, dat4d.shape[3]) - RCX) / RCal, (np.arange(0, dat4d.shape[2]) - RCY) / RCal)
-    return np.average(dat4d * ((X ** 2 + Y ** 2 >= RI ** 2) & (X ** 2 + Y ** 2 < RO ** 2)), axis=(2, 3))
-
-def GetiCoM(dat4d: np.ndarray, RCX: float, RCY: float, RCal: float, RI: float = 0, RO: float = 32) -> typing.Tuple[np.ndarray, np.ndarray]:
-    """Get Ronchigram Center of Mass Shifts from 4D Dataset
-
-    :param dat4d: 4D Dataset, 2-spatial, 2-diffraction dimensions
-    :param RCX: X Center of the Ronchigram (pixels)
-    :param RCY: Y Center of the Ronchigram (pixels)
-    :param RCal: Calibration of the Ronchigram (pixels/mrad)
-    :param RI: Inner Radius for CoM Measurement (mrad)
-    :param RO: Outer Radius for CoM Measurement (mrad)
-    :return iCoM as ndarray
-    """
-    X, Y = np.meshgrid((np.arange(0, dat4d.shape[3]) - RCX) / RCal, (np.arange(0, dat4d.shape[2]) - RCY) / RCal)
-    maskeddat4d = dat4d * ((X ** 2 + Y ** 2 >= RI ** 2) & (X ** 2 + Y ** 2 < RO ** 2))
-    return np.average(maskeddat4d * X, axis=(2, 3)), np.average(maskeddat4d * Y, axis=(2, 3))
-
-def GetPLRotation(dpcx: np.ndarray, dpcy: np.ndarray, *,  order: int = 3, outputall: bool = False) -> float:
-    """Find Rotation from PL Lenses by minimizing curl/maximizing divergence of DPC data
-
-    :param dpcx: X-Component of DPC Data (2D numpy array)
-    :param dpcy: Y-Component of DPC Data (2D numpy array)
-    :param order: Number of times to iterated calculation (int)
-    :param outputall: Output Curl and Divergence curves for all guesses in separate array (bool)
-    :return: The true PL Rotation value (Note: Can potentially be off by 180 degrees, determine by checking signs of charge/field/potential)
-    """
-    def DPC_ACD(dpcx,dpcy,tlow,thigh):        
-        A,C,D=[],[],[]
-        for t in np.linspace(tlow,thigh,10,endpoint=False):            
-            rdpcx,rdpcy=dpcx*np.cos(t)-dpcy*np.sin(t),dpcx*np.sin(t)+dpcy*np.cos(t)        
-            gXY,gXX=np.gradient(rdpcx);gYY,gYX=np.gradient(rdpcy)        
-            C.append(np.std(gXY-gYX));D.append(np.std(gXX+gYY));A.append(t)
-        R=np.average([A[np.argmin(C)],A[np.argmax(D)]])
-        return R,A,C,D
-    RotCalcs=[]
-    RotCalcs.append(DPC_ACD(dpcx,dpcy,0,np.pi))
-    for i in range(1,order): 
-        RotCalcs.append(DPC_ACD(dpcx,dpcy,RotCalcs[i-1][0]-np.pi/(10**i),RotCalcs[i-1][0]+np.pi/(10**i)))
-    if outputall: return RotCalcs
-    else: return RotCalcs[-1][0]
-
-def GetElectricFields(dpcx: np.ndarray, dpcy: np.ndarray, *, rotation: float = 0, LegPix: int = 301, LegRad: float = 0.85) -> typing.Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Convert dpcx and dpcy maps to to a color map where the color corresponds to the angle
-
-    :param dpcx: X-Component of DPC Data (2D numpy array)
-    :param dpcy: Y-Component of DPC Data (2D numpy array)
-    :param rotation: Optional rotation radians
-    :param LegPix: Number of Pixels in Color Wheel Legend
-    :param LegRad: Radius of Color Wheel in Legend (0-1)
-    :return: The electric fields as a 2D numpy array
-    """
-    EX = -dpcx
-    EY = -dpcy
-    rEX = EX * np.cos(rotation) - EY * np.sin(rotation)
-    rEY = EX * np.sin(rotation) + EY * np.cos(rotation)
-
-    EMag = np.sqrt(rEX ** 2 + rEY ** 2)
-
-    XY = np.zeros(rEX.shape + (3,), dtype=float)
-    M = np.amax(EMag)
-    EMagScale = EMag / M
-    for i in range(rEX.shape[0]):
-        for j in range(rEX.shape[1]):
-            XY[i, j] = np.angle(np.complex(rEX[i, j], rEY[i, j])) / (2 * np.pi) % 1, 1, EMagScale[i, j]
-    EDir=hsv_to_rgb(XY)
-    x, y = np.meshgrid(np.linspace(-1, 1, LegPix, endpoint=True), np.linspace(-1, 1, LegPix, endpoint=True))
-    X, Y = x * (x ** 2 + y ** 2 < LegRad ** 2), y * (x ** 2 + y ** 2 < LegRad ** 2)
-    XYLeg = np.zeros(X.shape + (3,), dtype=float)
-    RI = np.sqrt(X ** 2 + Y ** 2) / np.amax(np.sqrt(X ** 2 + Y ** 2))
-    for i in range(X.shape[0]):
-        for j in range(X.shape[1]):
-            XYLeg[i, j] = np.angle(np.complex(X[i, j], Y[i, j])) / (2 * np.pi) % 1, 1, RI[i, j]
-    EDirLeg=hsv_to_rgb(XYLeg)
-    return EMag, EDir, EDirLeg
-
-def GetChargeDensity(dpcx: np.ndarray, dpcy: np.ndarray, *, rotation: float = 0) -> np.ndarray:
-    """Calculate Charge Density from the Divergence of the Ronchigram Shifts
-
-    :param dpcx: X-Component of DPC Data (2D numpy array)
-    :param dpcy: Y-Component of DPC Data (2D numpy array)
-    :param rotation: Optional rotation radians
-    :return: The charge density as a 2D numpy array
-    """
-
-    rdpcx = dpcx * np.cos(rotation) + dpcy * np.sin(rotation)
-    rdpcy = -dpcx * np.sin(rotation) + dpcy * np.cos(rotation)
-    gxx, gyy = np.gradient(rdpcx)[1], np.gradient(rdpcy)[0]
-
-    return - gxx - gyy
-
-def GetPotential(dpcx: np.ndarray, dpcy: np.ndarray, *, rotation: float = 0, hpass: float = 0, lpass: float = 0) -> np.ndarray:
-    """Convert X and Y Shifts (E-Field Vector) Into Atomic Potential By Inverse Gradient
-
-    Note: This method is vulnerable to edge induced artifacts that a small degree of high-pass filtering
-    can clear up without significantly affecting the atomic-level contrast
-
-    :param dpcx: X-Component of DPC Data (2D numpy array)
-    :param dpcy: Y-Component of DPC Data (2D numpy array)
-    :param rotation: Optional rotation radians
-    :param hpass: Optional constant to provide variable high-pass filtering
-    :param lpass: Optional constant to provide variable low-pass filtering
-    :return: The potential as a 2D numpy array
-    """
-
-    rdpcx = dpcx * np.cos(rotation) + dpcy * np.sin(rotation)
-    rdpcy = -dpcx * np.sin(rotation) + dpcy * np.cos(rotation)
-    fCX = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(rdpcx)))
-    fCY = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(rdpcy)))
-    KX = fCX.shape[1]
-    KY = fCY.shape[0]
-    kxran = np.linspace(-1, 1, KX, endpoint=True)
-    kyran = np.linspace(-1, 1, KY, endpoint=True)
-    kx, ky = np.meshgrid(kxran, kyran)
-    fCKX = fCX * kx
-    fCKY = fCY * ky
-    fnum = (fCKX + fCKY)
-    fdenom = np.pi * 2 * (0 + 1j) * (hpass + (kx ** 2 + ky ** 2) + lpass * (kx ** 2 + ky ** 2) ** 2)
-    fK = np.divide(fnum, fdenom)
-
-    return np.real(np.fft.ifftshift(np.fft.ifft2(np.fft.ifftshift(fK))))
-
-### 0 . Get 4d data & virtual detector
 image_4d = DM.GetFrontImage()
 print("load 4D-STEM data")
+origin0, scale0, unit0 = image_4d.GetDimensionCalibration(0, 0)
+print(origin0, scale0, unit0)
+origin1, scale1, unit1 = image_4d.GetDimensionCalibration(1, 0)
+print(origin1, scale1, unit1)
+origin2, scale2, unit2 = image_4d.GetDimensionCalibration(2, 0)
+print(origin2, scale2, unit2)
+origin3, scale3, unit3 = image_4d.GetDimensionCalibration(3, 0)
+print(origin3, scale3, unit3)
+
 image_4d = np.nan_to_num(image_4d)
-dat4d = np.rollaxis(np.rollaxis(image_4d.GetNumArray(), 2, 0), 3, 1)
-print(dat4d.shape)
-print(np.max(dat4d))
-print(np.min(dat4d))
-print(np.mean(dat4d))
+f_stack = np.rollaxis(np.rollaxis(image_4d.GetNumArray(), 2, 0), 3, 1)
+print(f_stack.shape)
 
-### 1. Calibrate Ronchigram to find calibration and Ronchigram center
-dat4d_shape = dat4d.shape
+# Should know what ang_per_pixel & mrad_per_pixel is.
+test = dpc_python(f_stack, scale0, scale2)
 
-dummy = 10.0
+# Create number for DPC analysis
+while True:
+    center_num = int(input("""Select one option for finding the center position.
+    1) Center of Mass-PACBED
+    2) Gaussian fitting-PACBED"""))
+    crop_num = int(input("""Do you want to crop diffraction data?
+    1) Yes 2) No"""))
+    rot_num = int(input("""Do you want to find PL Rotation
+    1) Yes 2) No"""))
+    plot_num = int(input("""Select one option for result data type.
+    1) DigitalMicrograph file
+    2) Matplotlib subplot file"""))
+    if center_num in [1,2] and crop_num in [1,2] and rot_num in [1,2]:
+        break
+    else:
+        print("Warning! Choose only between 1 and 2")
 
-R, RonchiCenterX, RonchiCenterY, Ronchipixcal, BFdiskIm, absct, BFEdgeIm = CalibrateRonchigram(dat4d,conv=dummy,t=0.3)
-print("center of the Ronchigram: %f (x), %f (y)"%(RonchiCenterX, RonchiCenterY))
-Ronchipixcal = eval(input("Write a calibration value for the detector angle (mrad per pixel)"))
-imcal = eval(input("Write a calibration value for STEM image (Angstrom per pixel)"))
+# Create number for image plot
+x = True
+while x == True:
+    img_num = list(input("""Choose between four options. (Multiple options are allowed)
+1) Get PACBED (with center indication)
+2) Virtual imaging (BF & ADF image)
+3) Electric field
+4) Charge density & Potential"""))
+    while "," in img_num:
+        img_num.remove(",")
+    x = False
+    for i in range(len(img_num)):
+        if int(img_num[i]) not in [1,2,3,4]:
+            print("Warning! Choose only option 1 to 4")
+            x = True
 
-showtype = int(input(""" Choose a result type
-1) DM file
-2) Matplotlib figure """))
+if "4" in img_num:
+    high_num = float(input("""High pass filter : (Choose the number between 0 to 1)
+    If you don't need high pass filter, choose 0"""))
+    low_num = float(input("""Low pass filter : (Choose the number between 0 to 1)
+    If you don't need low pass filter, choose 0"""))
+else:
+    high_num, low_num = 0.0, 0.0
 
-print("R shape", R.shape)
-f,a=plt.subplots(1,4,dpi=200)
-a[0].imshow(dat4d[0,0],cmap=cm.nipy_spectral)
-a[0].add_patch(Circle((RonchiCenterX,RonchiCenterY),radius=2,ec='w',fc='None',lw=1.))
-a[0].set_title('Single Ronchigram',fontsize=6)
-a[0].add_patch(Rectangle((4,dat4d.shape[2]-7),50/Ronchipixcal,3,fc='w',ec='None'))
-a[0].text(4+25/Ronchipixcal,dat4d.shape[2]-7,'50 mrad',fontweight='bold',color='w',fontsize=6,ha='center',va='bottom')
+if center_num ==1:
+    test.find_center(com=True, gaussian=False)
+elif center_num ==2:
+    test.find_center(com=False, gaussian=True)
 
-a[1].imshow(np.average(dat4d,axis=(0,1)),cmap=cm.nipy_spectral)
-a[1].add_patch(Circle((RonchiCenterX,RonchiCenterY),radius=2,ec='w',fc='None',lw=1.))
-a[1].set_title('Average Ronchigram',fontsize=6)
-a[1].add_patch(Rectangle((4,dat4d.shape[2]-7),50/Ronchipixcal,3,fc='w',ec='None'))
+buffer_size = 15
+test.disk_extract(buffer_size)
 
-a[2].imshow(BFdiskIm,cmap=cm.nipy_spectral)
-a[2].add_patch(Circle((RonchiCenterX,RonchiCenterY),radius=2,ec='w',fc='None',lw=1.))
-a[2].set_title('Average BF Disk',fontsize=6)
-a[2].add_patch(Rectangle((4,dat4d.shape[2]-7),50/Ronchipixcal,3,fc='w',ec='None'))
-
-a[3].imshow(BFEdgeIm,cmap=cm.nipy_spectral)
-a[3].add_patch(Circle((RonchiCenterX,RonchiCenterY),radius=2,ec='w',fc='None',lw=1.))
-a[3].set_title('Average BF Disk Edge',fontsize=6)
-a[3].add_patch(Rectangle((4,dat4d.shape[2]-7),50/Ronchipixcal,3,fc='w',ec='None'))
-plt.setp(a, xticks=[],yticks=[])
-
-
-"""
-### 2. Use 4D Dataset to reconstruct images from arbitrary detector
-BF_outer = 10.0 #mrad
-BF = GetDetectorImage(dat4d,RonchiCenterX,RonchiCenterY,Ronchipixcal,0.,BF_outer)
-print("BF shape",BF.shape)
-inner_ind = int(input("\n
-To get an as-acquired stem image profile, inner and outer angles for a virtual detector are needed.\n
-First, write the index of the inner angle of the virtual detector (positive integer): \n
-"))
-outer_ind = int(input("Next, write the index of the outer angle of the virtual detector (positive integer):"))
-ADF_STEM = GetDetectorImage(dat4d,RonchiCenterX,RonchiCenterY,Ronchipixcal,inner_ind*Ronchipixcal,outer_ind*Ronchipixcal)
-if showtype == 2 :
-    f2,a2=plt.subplots(1,2)
-    a2[0].imshow(ADF_STEM,cmap=cm.inferno)
-    a2[0].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
-    a2[0].text(4+0.25/imcal,dat4d.shape[0]-7,'5 nm',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
-    a2[0].set_title('As-Acquired STEM ({}-{} mrad)'.format(inner_ind*Ronchipixcal, outer_ind*Ronchipixcal),fontsize=6)
-    a2[1].imshow(BF,cmap=cm.inferno)
-    a2[1].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
-    a2[1].set_title('Reconstructed BF (0-%d mrad)'%BF_outer,fontsize=8)
-    plt.setp(a2, xticks=[],yticks=[])
-elif showtype == 1 :
-    im2_1 = DM.CreateImage(ADF_STEM.copy())
-    im2_1.SetName("As-Acquired STEM ({}-{} mrad)".format(inner_ind*Ronchipixcal, outer_ind*Ronchipixcal))
-    im2_2 = DM.CreateImage(BF.copy())
-    im2_2.SetName('Reconstructed BF (0-%d mrad)'%BF_outer)
-    im2_1.ShowImage()
-    im2_2.ShowImage()
-"""
-
-### 3. Calculate Center of Mass Shifts (No Rotation)
-
-CoMX,CoMY=GetiCoM(dat4d,RonchiCenterX,RonchiCenterY,Ronchipixcal)
-Checkbox2 = input(" Do you want to apply PLRotation? Y/N")
-
-if Checkbox2 == "Y":
-    RotationCalcs=GetPLRotation(CoMX,CoMY,order=4,outputall=True)
-    PLRotation=RotationCalcs[-1][0]
-    rCoMX, rCoMY = CoMX * np.cos(PLRotation) - CoMY * np.sin(PLRotation), CoMX * np.sin(PLRotation) + CoMY * np.cos(PLRotation)
-    Checkpoint = input(" Do you want to compare Center of Mass with PLRotation and without PLRotation? Y/N")
-
-    if Checkpoint == "Y":
-        if showtype == 2:
-            f3,a3=plt.subplots(2,2,dpi=200)
-            a3[0,0].imshow(CoMX)
-            a3[0,0].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
-            a3[0,0].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
-            a3[0,0].set_title('CoM Shifts-X (No PL Rotation)',fontsize=6)
-            a3[0,1].imshow(CoMY)
-            a3[0,1].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
-            a3[0,1].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
-            a3[0,1].set_title('CoM Shifts-Y (No PL Rotation)',fontsize=6)
-            a3[1,0].imshow(rCoMX)
-            a3[1,0].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
-            a3[1,0].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
-            a3[1,0].set_title('CoM Shifts-X (w/ PL Rotation)',fontsize=6)
-            a3[1,1].imshow(rCoMY)
-            a3[1,1].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
-            a3[1,1].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
-            a3[1,1].set_title('CoM Shifts-Y (w/ PL Rotation)',fontsize=6)
-            plt.setp(a3, xticks=[],yticks=[])
-        elif showtype == 1:
-            im3_1 = DM.CreateImage(CoMX.copy())
-            im3_1.SetName("CoM Shifts-X (No PL Rotation)")
-            im3_1.ShowImage()
-            im3_2 = DM.CreateImage(CoMY.copy())
-            im3_2.SetName("CoM Shifts-Y (No PL Rotation)")
-            im3_2.ShowImage()
-            im3_3 = DM.CreateImage(rCoMX.copy())
-            im3_3.SetName("CoM Shifts-X (w/ PL Rotation)")
-            im3_3.ShowImage()
-            im3_4 = DM.CreateImage(rCoMY.copy())
-            im3_4.SetName("CoM Shifts-Y (w/ PL Rotation)")
-            im3_4.ShowImage()	
-
-elif Checkbox2 == "N":
-    rCoMX, rCoMY = CoMX, CoMY
+if crop_num ==1:
+    print("Crop diffraction 2D with buffer_size:{} pixel".format(buffer_size))
+    print("Cropped PACBED shape: {}".format(test.c_stack.shape))
+    print("Least radius: {}".format(test.least_R))
     
-    
-### 4. Calculate Electric Field Magnitude and Direction from Rotated CoM Shifts
-### NOTE: Without accounting for PL rotation, E-Field does not point radially away from nuclei.
-### This is not physical so the PL rotation calculation is required
-### 5. Calculate PL Rotation & Calculate Center of Mass Shifts (With Calculated Rotation)
+if crop_num ==2:
+    test.c_ct = test.ct
+    test.c_stack = test.original_stack
+    test.c_pacbed = test.original_pacbed
+    test.c_shape =  test.original_stack.shape
 
-checkbox3 = list(input("""
-Write one or many numbers (separting them with commas) described below :
-1) Electric field / 2) Charge density / 3) Potential
-"""))
-while "," in checkbox3:
-    checkbox3.remove(",")
-                    
-### 6. Calculate Electric Field Magnitude and Direction from Rotated CoM Shifts
+BF_det = [0, 25]
+ADF_det = [50, 80]
+test.virtual_stem(BF_det, ADF_det)
 
-if "1" in checkbox3:
-    EIm,EDirIm,EDirLeg=GetElectricFields(rCoMX,rCoMY)
-    
-    if showtype ==2:
-        f6,a6=plt.subplots(1,3,dpi=200)
-        a6[0].imshow(EIm)
-        a6[0].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
-        a6[0].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
-        a6[0].set_title('Electric Field Magnitude',fontsize=6)
-        a6[1].imshow(EDirIm)
-        a6[1].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
-        a6[1].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
-        a6[1].set_title('Electric Field Directions',fontsize=6)
-        a6[2].imshow(EDirLeg)
-        a6[2].set_title('Field Directions Legend',fontsize=6)
-        plt.setp(a6, xticks=[],yticks=[])
-    elif showtype == 1:
-        f6,a6=plt.subplots(1,2,dpi=200)
-        a6[0].imshow(EDirIm)
-        a6[0].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
-        a6[0].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
-        a6[0].set_title('Electric Field Directions',fontsize=6)
-        a6[1].imshow(EDirLeg)
-        a6[1].set_title('Field Directions Legend',fontsize=6)
-        plt.setp(a6, xticks=[],yticks=[])
-        im5_1 = DM.CreateImage(EIm.copy())
-        im5_1.SetName('Electric Field Magnitude')
-        im5_1.ShowImage()
+if rot_num == 1:
+    correct_rotation = True
+if rot_num ==2:
+    correct_rotation = False
+test.DPC(correct_rotation, n_theta=100, hpass= high_num, lpass= low_num)
+if rot_num ==1:
+    print("Optimized angle = {} degree".format(test.c_theta*180/np.pi))
+
+if plot_num ==1:
+    if "1" in img_num:
+        im1 = DM.CreateImage(test.c_pacbed.copy())
+        im1.SetName("PACBED")
+        im1.ShowImage()
+        # Center Indication test.c_ct[1], test.c_ct[0]
+
+    if "2" in img_num:
+        im2_1 = DM.CreateImage(test.BF_stem.copy())
+        im2_1.SetName("BF-STEM image")
+        im2_1.ShowImage()
+        im2_2 = DM.CreateImage(test.ADF_stem.copy())
+        im2_2.SetName("ADF-STEM image")
+        im2_2.ShowImage()
+
+    if "3" in img_num:
+        im3_1 = DM.CreateImage(test.ADF_stem.copy())
+        im3_1.SetName("ADF-STEM image")
+        im3_1.ShowImage()
+        im3_2 = DM.CreateImage(test.E_field_y.copy())
+        im3_2.SetName("Electric field y_component")
+        im3_2.ShowImage()
+        im3_3 = DM.CreateImage(test.E_field_x.copy())
+        im3_3.SetName("Electric field x_component")
+        im3_3.ShowImage()
+        im3_4 = DM.CreateImage(test.E_mag.copy())
+        im3_4.SetName("Electric field magnitude")
+        im3_4.ShowImage()
+
+    if "4" in img_num:
         
+        dir_num = int(input("""Electric field direction plot is only available in matplotlib. Proceed?
+        Select one option.
+        1) Yes (Get matplotlib subplot)
+        2) No (Skip electric field direction plot)"""))
+        if dir_num == 1:
+            RY, RX = np.indices(test.c_shape[:2])
+            fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+            ax.imshow(test.ADF_stem, cmap="gray")
+            ax.quiver(RX.flatten(), RY.flatten(), test.E_field_x.flatten(), test.E_field_y.flatten(), color=cm.jet(mcolors.Normalize()(test.E_mag.flatten())))
+            ax.set_title("Electric field direction")
+            ax.axis("off")
+            fig.tight_layout()
+            plt.show()
         
+        im4_1 = DM.CreateImage(test.charge_density.copy())
+        im4_1.SetName("Charge density")
+        im4_1.ShowImage()
+        im4_2 = DM.CreateImage(test.potential.copy())
+        im4_2.SetName("Potential")
+        im4_2.ShowImage()
 
-### 7. Calculate Charge Density from Divergence of CoM Shifts
+if plot_num == 2:
+    if "1" in img_num:
+        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+        ax.imshow(test.c_pacbed, cmap="jet")
+        ax.set_title("PACBED")
+        ax.scatter(test.c_ct[1], test.c_ct[0], s=15, c="k")
+        ax.axis("off")
+        fig.tight_layout()
 
-if "2" in checkbox3:
-    RhoIm = GetChargeDensity(rCoMX, rCoMY)
-    if showtype == 2:
-        f7,a7=plt.subplots()
-        a7.imshow(RhoIm,cmap=cm.seismic,vmin=-np.amax(np.abs(RhoIm)),vmax=np.amax(np.abs(RhoIm)))
-        a7.add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
-        a7.text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
-        a7.set_title('Charge Density',fontsize=8)
-        plt.setp(a7, xticks=[],yticks=[])
-        
-    elif showtype == 1:
-        im7 = DM.CreateImage(RhoIm.copy())
-        im7.SetName("Charge Density")
-        im7.ShowImage()
-    
+    if "2" in img_num:
+        fig, ax = plt.subplots(2, 2, figsize=(10, 10))   
+        ax[0][0].imshow(test.original_pacbed, cmap="jet")
+        ax[0][0].imshow(test.BF_detector, cmap="gray", alpha=0.5)
+        ax[0][0].set_title("BF detector")
+        ax[0][0].axis("off")
+        ax[0][1].imshow(test.BF_stem, cmap="afmhot")
+        ax[0][1].set_title("BF-STEM image")
+        ax[0][1].axis("off")
+        ax[1][0].imshow(test.original_pacbed, cmap="jet")
+        ax[1][0].imshow(test.ADF_detector, cmap="gray", alpha=0.5)
+        ax[1][0].set_title("ADF detector")
+        ax[1][0].axis("off")
+        ax[1][1].imshow(test.ADF_stem, cmap="afmhot")
+        ax[1][1].set_title("ADF-STEM image")
+        ax[1][1].axis("off")
+        fig.tight_layout()
 
-### 8. Calculate Potential from Inverse Gradient of CoM Shifts
-### Add High Pass Filtering to remove Edge Effects
+    if "3" in img_num:
+        fig, ax = plt.subplots(2, 2, figsize=(10, 10))
+        ax[0][0].imshow(test.ADF_stem, cmap="afmhot")
+        ax[0][0].set_title("ADF-STEM image")
+        ax[0][0].axis("off")
+        ax[0][1].imshow(test.E_field_y, cmap="gray")
+        ax[0][1].set_title("Electric field y_component")
+        ax[0][1].axis("off")
+        ax[1][0].imshow(test.E_field_x, cmap="gray")
+        ax[1][0].set_title("Electric field x_component")
+        ax[1][0].axis("off")
+        ax[1][1].imshow(test.E_mag, cmap="inferno")
+        ax[1][1].set_title("Electric field magnitude")
+        ax[1][1].axis("off")
+        fig.tight_layout()
 
-if "3" in checkbox3:
-    hpassnum1, hpassnum2= eval(input("""
-3) Calculate Potential
-Write two positive real numbers between 0 and 1 with a comma for high-pass filtering"""))
-    VImhp1 =GetPotential(rCoMX,rCoMY, hpass=hpassnum1)    
-    VImhp2 =GetPotential(rCoMX,rCoMY,hpass=hpassnum2)
-    if showtype == 2:
-        f8,a8=plt.subplots(1,2,dpi=200)
-        a8[0].imshow(VImhp1,cmap=cm.hot)
-        a8[0].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
-        a8[0].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
-        a8[0].set_title('Atomic Potential (w/ High Pass {})'.format(hpassnum1),fontsize=6)
-        a8[1].imshow(VImhp2,cmap=cm.hot)
-        a8[1].add_patch(Rectangle((4,dat4d.shape[0]-7),0.5/imcal,3,fc='w',ec='None'))
-        a8[1].text(4+0.25/imcal,dat4d.shape[0]-7,'5 A',fontweight='bold',color='w',fontsize=5,ha='center',va='bottom')
-        a8[1].set_title('Atomic Potential (w/ High Pass {})'.format(hpassnum2),fontsize=6)
-        plt.setp(a8, xticks=[],yticks=[])
-        
-    elif showtype == 1:
-        im8_1 = DM.CreateImage(VImhp1.copy())
-        im8_1.SetName('Atomic Potential (w/ High Pass {})'.format(hpassnum1))
-        im8_2 = DM.CreateImage(VImhp2.copy())
-        im8_2.SetName('Atomic Potential (w/ High Pass {})'.format(hpassnum2))
-        im8_1.ShowImage()
-        im8_2.ShowImage()
-
-plt.show()
+    if "4" in img_num:
+        RY, RX = np.indices(test.c_shape[:2])
+        fig, ax = plt.subplots(2, 2, figsize=(10, 10))
+        ax[0][0].imshow(test.ADF_stem, cmap="gray")
+        ax[0][0].quiver(RX.flatten(), RY.flatten(), test.E_field_x.flatten(), test.E_field_y.flatten(), color=cm.jet(mcolors.Normalize()(test.E_mag.flatten())))
+        ax[0][0].set_title("Electric field direction")
+        ax[0][0].axis("off")
+        ax[0][1].axis("off")
+        ax[1][0].imshow(test.ADF_stem, cmap="gray")
+        ax[1][0].imshow(test.charge_density, cmap="RdBu_r")
+        ax[1][0].set_title("Charge density")
+        ax[1][0].axis("off")
+        ax[1][1].imshow(test.ADF_stem, cmap="gray")
+        ax[1][1].imshow(test.potential, cmap="RdBu_r")
+        ax[1][1].set_title("Potential")
+        ax[1][1].axis("off")
+        fig.tight_layout()
+    plt.show()
