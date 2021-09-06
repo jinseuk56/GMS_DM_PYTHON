@@ -3,7 +3,7 @@
 # Seoul National University
 # last update : 20210906
 # differential phase contrast imaging for 4D-STEM data
-# You can adjust the parameters related to the pass filter 
+# You can adjust the parameters (pass filter) when acquiring the iDPC image.
 
 import numpy as np
 from scipy import optimize
