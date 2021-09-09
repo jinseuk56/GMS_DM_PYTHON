@@ -10,7 +10,6 @@ print("Execute Python script in GMS 3")
 
 import sys
 sys.argv.extend(['-a', ' '])
-import matplotlib.pyplot as plt
 import DigitalMicrograph as DM
 import numpy as np
 from scipy import optimize
@@ -163,10 +162,6 @@ else:
 	print("*"*50)
 	exit()
 
-fig1, ax1 = plt.subplots(1, 1, figsize=(5, 5))
-ax1.imshow(pacbed, cmap="gray")
-ax1.scatter(ct[1], ct[0], c="red")
-ax1.axis("off")
 
 # radial average of DPs (not variance, intensity direcltly, RDF?)
 print("calculating the rotational average of each DP")
