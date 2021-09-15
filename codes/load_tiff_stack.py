@@ -29,10 +29,10 @@ else:
 if len(data.shape) == 4:
 	data = fourd_roll_axis(data)
 
-elif len(data.shape) == 3:
+#elif len(data.shape) == 3:
 	#data = data.reshape(1, data.shape[0], data.shape[1], data.shape[2])
 	#data = fourd_roll_axis(data)
-	data = threed_roll_axis(data)
+	#data = threed_roll_axis(data)
 	
 	
 data_dm = DM.CreateImage(data.copy())
