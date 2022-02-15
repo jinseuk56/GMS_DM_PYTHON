@@ -34,9 +34,9 @@ fd = fd.GetNumArray()
 print(fd.shape)
 
 if len(fd.shape) == 4:
-	fd = fourd_roll_axis(fd)
-	
+    fd = fourd_roll_axis(fd)
+
 #elif len(fd.shape) == 3:
-#	fd = threed_roll_axis(fd)
+#    fd = threed_roll_axis(fd)
 
 tifffile.imsave(tkf.asksaveasfilename(), fd)
