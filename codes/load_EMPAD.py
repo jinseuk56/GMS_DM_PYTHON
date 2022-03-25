@@ -22,8 +22,8 @@ print("Libraries have been imported completely")
 # ********************************************************************************
 
 if ( False == DM.IsScriptOnMainThread() ):
-	print('MatplotLib scripts require to be run on the main thread.')
-	exit()
+    print('MatplotLib scripts require to be run on the main thread.')
+    exit()
 
 
 def load_binary_4D_stack(img_adr, datatype, original_shape, final_shape, log_scale=False):
@@ -59,25 +59,25 @@ q_text = """Select the original shape of 4D-STEM data
 
 shape_check = eval(input(q_text))
 if shape_check == 1:
-	o_shape = (256, 256, 130, 128)
-	f_shape = (256, 256, 128, 128)
-	
+    o_shape = (256, 256, 130, 128)
+    f_shape = (256, 256, 128, 128)
+    
 elif shape_check == 2:
-	o_shape = (128, 128, 130, 128)
-	f_shape = (128, 128, 128, 128)
-	
+    o_shape = (128, 128, 130, 128)
+    f_shape = (128, 128, 128, 128)
+    
 elif shape_check == 3:
-	sx = int(input("size of the 1st dimension: "))
-	sy = int(input("size of the 2nd dimension: "))
-	dsx = int(input("size of the 3rd dimension: "))
-	dsy = int(input("size of the 4th dimension: "))
-	o_shape = (sy, sx, dsy+2, dsx)
-	f_shape = (sy, sx, dsy, dsx)
+    sx = int(input("size of the 1st dimension: "))
+    sy = int(input("size of the 2nd dimension: "))
+    dsx = int(input("size of the 3rd dimension: "))
+    dsy = int(input("size of the 4th dimension: "))
+    o_shape = (sy, sx, dsy+2, dsx)
+    f_shape = (sy, sx, dsy, dsx)
 
 else:
-	print("Wrong input !")
-	exit()
-	
+    print("Wrong input !")
+    exit()
+    
 # load a data
 stack_4d = load_binary_4D_stack(raw_adr, datatype, o_shape, f_shape, log_scale=False)
 print(np.max(stack_4d))
@@ -91,14 +91,14 @@ additional_check = input("""Do you also want to invert the dimensions of 4D-STEM
 (a, b, c, d) -> (c, d, a, b)""")
 
 if shape_check == 1:
-	stack_4d = uint16astype(stack_4d)
+    stack_4d = uint16astype(stack_4d)
 
 
 if additional_check == "Y":
-	stack_tmp = DM.CreateImage(stack_4d.copy())
-	stack_tmp.SetName("dimension-inversed 4D-STEM data")
-	stack_tmp.ShowImage()
-	
+    stack_tmp = DM.CreateImage(stack_4d.copy())
+    stack_tmp.SetName("dimension-inversed 4D-STEM data")
+    stack_tmp.ShowImage()
+    
 stack_4d = fourd_roll_axis(stack_4d)
 print(np.max(stack_4d))
 print(np.min(stack_4d))
