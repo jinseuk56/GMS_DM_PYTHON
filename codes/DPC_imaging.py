@@ -1,7 +1,7 @@
 # Ingyu Yoo, Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# last update : 20210906
+# last update : 20220409
 # differential phase contrast imaging for 4D-STEM data
 # You can adjust the parameters (pass filter) when acquiring the iDPC image.
 
@@ -161,6 +161,7 @@ image_4d = np.nan_to_num(image_4d)
 f_stack = np.rollaxis(np.rollaxis(image_4d.GetNumArray(), 2, 0), 3, 1)
 print(f_stack.shape)
 
+#Get DPC, iDPC, dDPC
 test = dpc_python(f_stack, scale0, scale2)
 test.find_center()
 test.disk_extract()
@@ -245,7 +246,7 @@ if py_figure == "Y":
     RY, RX = np.indices(test.c_shape[:2])
     fig4, ax4 = plt.subplots(2, 2, figsize=(10, 10))
     ax4[0][0].imshow(test.ADF_stem, cmap="gray")
-    ax4[0][0].quiver(RX.flatten(), RY.flatten(), test.E_field_x.flatten(), test.E_field_y.flatten(), color=cm.jet(mcolors.Normalize()(test.E_mag.flatten())))
+    ax4[0][0].quiver(RX.flatten(), np.flip(RY.flatten(), axis=0), test.E_field_x.flatten(), test.E_field_y.flatten(), color=cm.jet(mcolors.Normalize()(test.E_mag.flatten())))
     ax4[0][0].set_title("Electric field direction")
     ax4[0][0].axis("off")
     ax4[0][1].axis("off")

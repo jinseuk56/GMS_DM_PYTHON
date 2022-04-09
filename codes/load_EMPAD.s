@@ -24,7 +24,8 @@ CloseFile(file_ID)
 
 image rolled
 
-rolled := img.sliceN(4, 4, 0, 0, 0, 0, 2, sx, 1, 3, sy, 1, 0, dsx, 1, 1, dsy, 1)
+rolled := img.sliceN(4, 4, 0, 0, 0, 0, 3, sx, 1, 2, sy, 1, 0, dsx, 1, 1, dsy, 1)
+rolled := rolled.sliceN(4, 4, 0, sy-1, 0, 0, 1, sy, -1, 0, sx, 1, 2, dsx, 1, 3, dsy, 1)
 
 closeimage(img)
 rolled.showimage()

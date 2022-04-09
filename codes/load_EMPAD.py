@@ -5,7 +5,7 @@
 # load EMPAD data (.raw)
 # it does not work properly when the data shape is (256, 256, 128, 128)
 # however, it will work as a stopgap when the data type is converted into uint16 
-# the reason of this problem has not been figured out; 
+# this problem has not been figured out; 
 # thus, it is recommended to use instead "load_EMPAD.s" (DM script) when the data shape is (256, 256, 128, 128)
 
 
@@ -20,10 +20,6 @@ import numpy as np
 
 print("Libraries have been imported completely")
 # ********************************************************************************
-
-if ( False == DM.IsScriptOnMainThread() ):
-    print('MatplotLib scripts require to be run on the main thread.')
-    exit()
 
 
 def load_binary_4D_stack(img_adr, datatype, original_shape, final_shape, log_scale=False):
@@ -80,14 +76,15 @@ else:
     
 # load a data
 stack_4d = load_binary_4D_stack(raw_adr, datatype, o_shape, f_shape, log_scale=False)
+#Transpose real space axes
+stack_4d = np.moveaxis(stack_4d, [0,1], [1,0])
+stack_4d = np.rot90(stack_4d, axes=(1, 0))
+
 print(np.max(stack_4d))
 print(np.min(stack_4d))
 print(np.mean(stack_4d))
-if np.isnan(np.max(stack_4d)):
-    print("there is a NaN")
-    stack_4d = np.nan_to_num(stack_4d)
 
-additional_check = input("""Do you also want to invert the dimensions of 4D-STEM data? (Y or N): 
+additional_check = input("""Do you also want to inverse the dimensions of 4D-STEM data? (Y or N): 
 (a, b, c, d) -> (c, d, a, b)""")
 
 if shape_check == 1:
