@@ -1,12 +1,8 @@
 # Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# last update : 20210304
+# last update : 20220411
 # load EMPAD data (.raw)
-# it does not work properly when the data shape is (256, 256, 128, 128)
-# however, it will work as a stopgap when the data type is converted into uint16 
-# this problem has not been figured out; 
-# thus, it is recommended to use instead "load_EMPAD.s" (DM script) when the data shape is (256, 256, 128, 128)
 
 
 # ********************************************************************************
@@ -85,9 +81,6 @@ print(np.mean(stack_4d))
 
 additional_check = input("""Do you also want to inverse the dimensions of 4D-STEM data? (Y or N): 
 (a, b, c, d) -> (c, d, a, b)""")
-
-if shape_check == 1:
-    stack_4d = uint16astype(stack_4d)
 
 
 if additional_check == "Y":
