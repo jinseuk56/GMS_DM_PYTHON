@@ -1,9 +1,9 @@
 # Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# 20210528
-# basic applications of PCA or NMF to hyperspectral data (e.g. EELS-SI)
-# some parameters in PCA and NMF were pre-determined
+# 20220705
+# simple implementation of PCA or NMF for feature extraction from an EELS spectrum image
+# some parameters in PCA and NMF were already pre-determined (you can change the parameters in this script)
 # please visit the documentation page of Scikit-learn package for detailed description of PCA and NMF
 # https://scikit-learn.org/stable/index.html
 
@@ -22,27 +22,9 @@ from sklearn.decomposition import NMF, PCA
 print("Libraries have been imported completely")
 # ********************************************************************************
 
-if ( False == DM.IsScriptOnMainThread() ):
+if (False == DM.IsScriptOnMainThread()):
     print('MatplotLib scripts require to be run on the main thread.')
     exit()
-
-# ********************************************************************************
-def zero_one_rescale(spectrum):
-    """
-    get rid of negative values
-    rescale a spectrum [0, 1]
-    """
-    spectrum = spectrum.clip(min=0.0)
-    min_val = np.min(spectrum)
-    
-    rescaled = spectrum - min_val
-    
-    if np.max(rescaled) != 0:
-        rescaled = rescaled / np.max(rescaled)
-    
-    return rescaled
-    
-# ********************************************************************************
 
 # ********************************************************************************
 SI = DM.GetFrontImage()
@@ -81,9 +63,11 @@ data_shape = SI_data_cropped.shape[:2]
 depth = SI_data_cropped.shape[2]
 
 dataset_input = SI_data_cropped.reshape(-1, depth)
-for i in range(len(dataset_input)):
-    dataset_input[i] = zero_one_rescale(dataset_input[i])
+normalize_check = input("Do you want to normalize each spectrum ? (max normalization) (Y or N)")
 print(dataset_input.shape)
+
+if normalize_check == "Y":
+    dataset_input = dataset_input / np.max(dataset_input, axis=1)[:, np.newaxis]
 # ********************************************************************************
 
 q_text = """Select one option.
@@ -102,8 +86,7 @@ if decomp_check == 1:
     pca_comps = skl_pca.components_
 
 
-    num_rec = int(input("How many loading vectors do you want to use when reconstructing the data ?"))
-    pca_reconstructed = np.dot(pca_coeffs[:, :num_rec], pca_comps[:num_rec]) + skl_pca.mean_
+    pca_reconstructed = np.dot(pca_coeffs[:, :pca_num_comp], pca_comps[:pca_num_comp]) + skl_pca.mean_
 
     print(pca_coeffs.shape)
     print(pca_comps.shape)
