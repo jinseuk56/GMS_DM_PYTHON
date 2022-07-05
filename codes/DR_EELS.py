@@ -62,7 +62,7 @@ else:
 data_shape = SI_data_cropped.shape[:2]
 depth = SI_data_cropped.shape[2]
 
-dataset_input = SI_data_cropped.reshape(-1, depth)
+dataset_input = SI_data_cropped.reshape(-1, depth).clip(min=0.0)
 normalize_check = input("Do you want to normalize each spectrum ? (max normalization) (Y or N)")
 print(dataset_input.shape)
 
