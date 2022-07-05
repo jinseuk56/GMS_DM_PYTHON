@@ -9,11 +9,9 @@
 print("Execute Python script in GMS 3")
 
 import DigitalMicrograph as DM
-from scipy import optimize
 import numpy as np
 import sys
 sys.argv.extend(['-a', ' '])
-import matplotlib.pyplot as plt
 
 print("Libraries have been imported completely")
 # ********************************************************************************
@@ -81,10 +79,6 @@ else:
     print("*"*50)
     exit()
 
-fig1, ax1 = plt.subplots(1, 1, figsize=(5, 5))
-ax1.imshow(pacbed, cmap="gray")
-ax1.scatter(ct[1], ct[0], c="red")
-ax1.axis("off")
 
 def max_rad(shape, center=None):
     y, x = np.indices(shape)
@@ -179,5 +173,3 @@ pacbed_dm.SetName("PACBED")
 pacbed_dm.SetDimensionCalibration(0, origin2, scale2, unit2, 0)
 pacbed_dm.SetDimensionCalibration(1, origin3, scale3, unit3, 0)
 pacbed_dm.ShowImage()
-
-plt.show()
