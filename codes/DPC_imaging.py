@@ -166,8 +166,12 @@ test = dpc_python(f_stack, scale0, scale2)
 test.find_center()
 test.disk_extract()
 
-BF_det = [0, int(test.least_R)]
-ADF_det = [int(test.least_R), int(np.min(test.ct))]
+BF_det = np.array([0, test.least_R]) * test.mrad_per_pixel
+ADF_det = np.array([1.5*test.least_R, 2.0*test.least_R]) * test.mrad_per_pixel
+print("BF collection angle")
+print(BF_det)
+print("ADF collection angle")
+print(ADF_det)
 test.virtual_stem(BF_det, ADF_det)
 
 test.DPC()
