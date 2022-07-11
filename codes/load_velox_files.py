@@ -38,7 +38,7 @@ def transform_to_DM(img, datatype=False, roll_axis=True):
         unit = img.axes_manager[i].units
         if not isinstance(unit, str):
             unit = "undefined"
-        calibration_info.append([origin, scale, unit])
+        calibration_info.append([origin, scale, unit.replace(" ", "")])
     
     dm_out = img.data.copy()
     if datatype:
