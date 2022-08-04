@@ -42,15 +42,28 @@ print(origin2, scale2, unit2)
 
 SI_data = np.rollaxis(SI.GetNumArray(), 0, 3)
 print(SI_data.shape)
+
+e_range = np.arange(origin2, scale2*SI_data.shape[2]+origin2, scale2)
+print(e_range[0], e_range[-1])
+print(e_range.shape)
 # ********************************************************************************
 
 # ********************************************************************************
+
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx
+
 
 crop_check = input("Do you want to crop spectra ? (Y or N)")
 
 if crop_check == "Y":
-    start_ind = int(input("initial index of the crop range: "))
-    end_ind = int(input("final index of the crop range: "))
+    start_eV = eval(input("initial energy loss (eV) of the crop range: "))
+    end_eV = eval(input("final energy loss (eV) of the crop range: "))
+    start_ind = find_nearest(e_range, start_eV)
+    end_ind = find_nearest(e_range, end_eV)
+    print(start_ind, end_ind)
     cr_range = [start_ind, end_ind]
     SI_data_cropped = SI_data[:, :, cr_range[0]:cr_range[1]].copy()
 
@@ -83,7 +96,7 @@ num_comp = int(input("How many loading vectors do you want to extract ?"))
 if decomp_check == 1:
     # ********************************************************************************
     pca_num_comp = num_comp
-    skl_pca = PCA(n_components=pca_num_comp, whiten=True, svd_solver="auto")
+    skl_pca = PCA(n_components=pca_num_comp, whiten=False)
     pca_coeffs = skl_pca.fit_transform(dataset_input)
     pca_comps = skl_pca.components_
 
