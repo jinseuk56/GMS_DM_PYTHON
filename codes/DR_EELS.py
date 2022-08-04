@@ -1,10 +1,12 @@
 # Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# 20220705
-# simple implementation of PCA or NMF for feature extraction from an EELS spectrum image
-# some parameters in PCA and NMF were already pre-determined (you can change the parameters in this script)
-# please visit the documentation page of Scikit-learn package for detailed description of PCA and NMF
+# 20220804
+# Simple implementation of PCA or NMF for feature extraction from an EELS spectrum image
+# Some parameters for PCA and NMF were already pre-determined (you can change the parameters in this script)
+# If the unit of the scan shape is '¥ìm', it must be converted into another length unit, e.g., 'nm'
+# It is because there is an error in reading greek alphabets from the calibration information.
+# Please visit the documentation page of Scikit-learn package for detailed description of PCA and NMF
 # https://scikit-learn.org/stable/index.html
 
 
@@ -81,7 +83,7 @@ num_comp = int(input("How many loading vectors do you want to extract ?"))
 if decomp_check == 1:
     # ********************************************************************************
     pca_num_comp = num_comp
-    skl_pca = PCA(n_components=pca_num_comp, whiten=False, svd_solver="auto")
+    skl_pca = PCA(n_components=pca_num_comp, whiten=True, svd_solver="auto")
     pca_coeffs = skl_pca.fit_transform(dataset_input)
     pca_comps = skl_pca.components_
 
