@@ -73,7 +73,7 @@ else:
 # load a data
 stack_4d = load_binary_4D_stack(raw_adr, datatype, o_shape, f_shape, log_scale=False)
 #Transpose real space axes
-stack_4d = np.moveaxis(stack_4d, [0,1], [1,0])
+stack_4d = np.flip(stack_4d, axis=2)
 
 print(np.max(stack_4d))
 print(np.min(stack_4d))
