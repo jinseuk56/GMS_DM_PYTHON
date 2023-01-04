@@ -188,5 +188,3 @@ ravg_dm.SetDimensionCalibration(0, origin0, scale0, unit0, 0)
 ravg_dm.SetDimensionCalibration(1, origin1, scale1, unit1, 0)
 ravg_dm.SetDimensionCalibration(2, 0, scale2, unit2, 0)
 ravg_dm.ShowImage()
-
-plt.show()
