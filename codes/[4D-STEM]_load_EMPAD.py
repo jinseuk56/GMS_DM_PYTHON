@@ -12,6 +12,8 @@ import sys
 sys.argv.extend(['-a', ' '])
 import tkinter.filedialog as tkf
 import DigitalMicrograph as DM
+import tkinter.filedialog as tkf
+import tifffile
 import numpy as np
 
 print("Libraries have been imported completely")
@@ -78,6 +80,12 @@ stack_4d = np.flip(stack_4d, axis=2)
 print(np.max(stack_4d))
 print(np.min(stack_4d))
 print(np.mean(stack_4d))
+
+q_check = input("Do you want to save the result as tiff format? (Y/N): ")
+if q_check == "Y":
+    print("save the result as tiff format")
+    tifffile.imwrite(tkf.asksaveasfilename(), stack_4d)
+
 
 additional_check = input("""Do you also want to inverse the dimensions of 4D-STEM data? (Y or N): 
 (a, b, c, d) -> (c, d, a, b)""")
