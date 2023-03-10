@@ -41,6 +41,7 @@ def transform_to_DM(img, datatype=False, roll_axis=True):
         calibration_info.append([origin, scale, unit.replace(" ", "")])
     
     dm_out = img.data.copy()
+    
     if datatype:
         dm_out = dm_out.astype(datatype)
         
@@ -51,7 +52,7 @@ def transform_to_DM(img, datatype=False, roll_axis=True):
         if n_dim == 4:
             dm_out = fourd_roll_axis(dm_out)
             
-    dm_out = DM.CreateImage(dm_out.copy())    
+    dm_out = DM.CreateImage(dm_out.copy())
     
     for i in range(n_dim):
         dm_out.SetDimensionCalibration(i, calibration_info[i][0], calibration_info[i][1], calibration_info[i][2], 0)
@@ -71,10 +72,10 @@ for i in range(len(file_adr)):
             if data_loaded[j].metadata.General.title == "EDS" and len(data_loaded[j].data.shape) == 3:
                 transform_to_DM(data_loaded[j], datatype=np.uint8, roll_axis=True)
             else:
-                transform_to_DM(data_loaded[j], datatype="", roll_axis=False)
+                transform_to_DM(data_loaded[j], datatype=np.uint16, roll_axis=False)
             
     else:
         if data_loaded.metadata.General.title == "EDS" and len(data_loaded.data.shape) == 3:
             transform_to_DM(data_loaded, datatype=np.uint8, roll_axis=True)
         else:
-            transform_to_DM(data_loaded, datatype="", roll_axis=False)
+            transform_to_DM(data_loaded, datatype=np.uint16, roll_axis=False)
