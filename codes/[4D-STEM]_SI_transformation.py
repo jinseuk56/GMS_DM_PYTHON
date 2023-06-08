@@ -254,7 +254,7 @@ elif q_check_2 == 2:
     ravg_dm.ShowImage()
     
     rvar_dm = DM.CreateImage(radial_var_stack.copy())
-    rvar_dm.SetName("rotational average spectrum image")
+    rvar_dm.SetName("rotational variance spectrum image")
     rvar_dm.SetDimensionCalibration(0, origin0, scale0, unit0, 0)
     rvar_dm.SetDimensionCalibration(1, origin1, scale1, unit1, 0)
     rvar_dm.SetDimensionCalibration(2, 0, scale2, unit2, 0)
