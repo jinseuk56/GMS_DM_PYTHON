@@ -17,17 +17,24 @@ img_adr = tkf.askopenfilenames()
 print("number of the selected files: ", len(img_adr))
 print(*img_adr, sep="\n")
 
+q_check = input("Do you want to save the result as tiff format? (Y/N): ")
+if q_check == "Y":
+    q_dim = input("Write the data shape you want, e.g., (256, 256, 128, 128)")
+    data_shape = eval(q_dim)
+    print("final data shape :", data_shape)
+
 
 for i in range(len(img_adr)):
     adr = img_adr[i]
     if adr[-3:] == "tif" or adr[-4:]=="tiff":
         data = tifffile.imread(adr)
+        if q_check == "Y":
+            data = np.reshape(data, data_shape)
         print(data.shape)
 
     else:
         print("wrong input !")
         exit()
-
 
     if len(data.shape) == 4:
         data = fourd_roll_axis(data)
