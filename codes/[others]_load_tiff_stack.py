@@ -17,9 +17,9 @@ img_adr = tkf.askopenfilenames()
 print("number of the selected files: ", len(img_adr))
 print(*img_adr, sep="\n")
 
-q_check = input("Do you want to save the result as tiff format? (Y/N): ")
+q_check = input("Do you want to reshape the data? (Y/N): ")
 if q_check == "Y":
-    q_dim = input("Write the data shape you want, e.g., (256, 256, 128, 128)")
+    q_dim = input("Write the data shape in parenthesis, e.g., (256, 256, 128, 128)")
     data_shape = eval(q_dim)
     print("final data shape :", data_shape)
 
