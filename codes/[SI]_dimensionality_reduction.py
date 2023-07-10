@@ -1,8 +1,8 @@
 # Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# 20220804
-# Simple implementation of PCA or NMF for feature extraction from an EELS spectrum image
+# 20230710
+# Simple implementation of PCA or NMF for feature extraction from a spectrum image including 4D-STEM data
 # Some parameters for PCA and NMF were already pre-determined (you can change the parameters in this script)
 # If the unit of the scan shape is '??m', it must be converted into another length unit, e.g., 'nm'
 # It is because there is an error in reading greek alphabets from the calibration information.
