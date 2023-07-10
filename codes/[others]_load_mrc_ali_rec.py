@@ -80,6 +80,7 @@ elif file_adr[-3:] == "mrc":
     
     data_dm = DM.CreateImage(data.copy())
     data_dm.SetName("tilt series")
+    data_dm.SetDimensionCalibration(2, float(tilt_angles[0]), float(tilt_angles[1]-tilt_angles[0]), "degree", 0)
     print(data_dm)
     data_dm.ShowImage()
     

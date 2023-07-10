@@ -1,3 +1,10 @@
+# Jinseok Ryu
+# Electron Microscopy and Spectroscopy Lab.
+# Seoul National University
+# 20230710
+# load one or many tiff files
+
+
 import sys
 sys.argv.extend(['-a', ' '])
 import DigitalMicrograph as DM

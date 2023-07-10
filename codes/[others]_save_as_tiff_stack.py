@@ -1,8 +1,8 @@
 # Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# last update : 20210520
-# save the front image (multi-dimensional) as a tiff stack file
+# last update : 2023710
+# save the front image as a tiff file
 
 
 # ********************************************************************************
@@ -20,7 +20,7 @@ print("Libraries have been imported completely")
 # ********************************************************************************
 
 def threed_roll_axis(img):
-    stack = np.rollaxis(img, 2, 0)
+    stack = np.rollaxis(img, 0, 3)
     return stack
     
 def fourd_roll_axis(stack):
@@ -36,7 +36,8 @@ print(fd.shape)
 if len(fd.shape) == 4:
     fd = fourd_roll_axis(fd)
 
-#elif len(fd.shape) == 3:
-#    fd = threed_roll_axis(fd)
+elif len(fd.shape) == 3:
+    fd = threed_roll_axis(fd)
+    print(fd.shape)
 
 tifffile.imsave(tkf.asksaveasfilename(), fd)

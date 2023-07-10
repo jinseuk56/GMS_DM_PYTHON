@@ -1,9 +1,9 @@
 # Jinseok Ryu
 # Electron Microscopy and Spectroscopy Lab.
 # Seoul National University
-# 20210906
-# Load Velox files (.emd) using the io module of the Hyperspy package
-# it is possible to import other file formats that the Hyperspy package supports (but, it may not work properly)
+# 20230710
+# Load files using the io module of the Hyperspy package
+# it supports the file formats that the Hyperspy package does (but, it may not work properly)
 # You can import one or many files
 # The imported data will be returned as DM file(s) on the activated workspace
 # The memory problem (lack of available memory) may arise when you import a STEM-EDS spectrum image (or a large multi-dimensional data)
