@@ -197,7 +197,7 @@ elif num_dim == 4:
     dataset_input = np.asarray(dataset_input).reshape(-1, fb*fb)
     print(dataset_input.shape)
     
-    data_shape = (SI_data.shape[0], SI_data.shape[0], fb, fb)
+    data_shape = (SI_data.shape[0], SI_data.shape[1], fb, fb)
     depth = fb*fb
     
     normalize_check = input("Do you want to normalize each spectrum ? (max normalization) (Y or N)")
@@ -301,8 +301,7 @@ if decomp_check == 1:
 elif decomp_check == 2:
     # ********************************************************************************
     nmf_num_comp = num_comp
-    skl_nmf = NMF(n_components=nmf_num_comp, init="nndsvda", solver="mu", max_iter=1000, verbose=True, beta_loss="frobenius", l1_ratio=0.0, alpha=0.0)
-
+    skl_nmf = NMF(n_components=nmf_num_comp, init="nndsvda", solver="mu", max_iter=1000, verbose=True, beta_loss="frobenius")
     nmf_coeffs = skl_nmf.fit_transform(dataset_input)
     print(nmf_coeffs[:, [1,2]].shape)
     nmf_comps = skl_nmf.components_
