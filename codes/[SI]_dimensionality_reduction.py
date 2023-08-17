@@ -321,9 +321,9 @@ elif decomp_check == 2:
         nmf_coeffs_tmp = np.reshape(nmf_coeffs, (data_shape[0], data_shape[1], nmf_num_comp, 1))
         nmf_coeffs_dm = DM.CreateImage(nmf_coeffs_tmp.copy())
         nmf_coeffs_dm.SetName("NMF coefficient maps")
-        nmf_coeffs_dm.SetDimensionCalibration(1, 1, 1, "loading vector", 0)
-        nmf_coeffs_dm.SetDimensionCalibration(2, origin0, scale0, unit0, 0)
-        nmf_coeffs_dm.SetDimensionCalibration(3, origin1, scale1, unit1, 0)
+        nmf_coeffs_dm.SetDimensionCalibration(0, 1, 1, "loading vector", 0)
+        nmf_coeffs_dm.SetDimensionCalibration(1, origin0, scale0, unit0, 0)
+        nmf_coeffs_dm.SetDimensionCalibration(2, origin1, scale1, unit1, 0)
 
         # ********************************************************************************
 
