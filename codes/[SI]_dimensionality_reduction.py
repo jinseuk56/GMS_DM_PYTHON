@@ -93,6 +93,7 @@ SI = DM.GetFrontImage()
 print(SI)
 
 SI_data = SI.GetNumArray()
+SI_data = SI_data.clip(min=0.0)
 num_dim = len(SI_data.data.shape)
 
 if num_dim == 3:
