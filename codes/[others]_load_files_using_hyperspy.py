@@ -72,10 +72,10 @@ for i in range(len(file_adr)):
             if data_loaded[j].metadata.General.title == "EDS" and len(data_loaded[j].data.shape) == 3:
                 transform_to_DM(data_loaded[j], datatype=np.uint8, roll_axis=True)
             else:
-                transform_to_DM(data_loaded[j], datatype=np.uint16, roll_axis=False)
+                transform_to_DM(data_loaded[j], roll_axis=False)
             
     else:
         if data_loaded.metadata.General.title == "EDS" and len(data_loaded.data.shape) == 3:
             transform_to_DM(data_loaded, datatype=np.uint8, roll_axis=True)
         else:
-            transform_to_DM(data_loaded, datatype=np.uint16, roll_axis=False)
+            transform_to_DM(data_loaded, roll_axis=False)
