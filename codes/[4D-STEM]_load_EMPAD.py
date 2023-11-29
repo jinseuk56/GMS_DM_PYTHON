@@ -95,7 +95,7 @@ if additional_check == "Y":
     stack_tmp = DM.CreateImage(stack_4d.copy())
     stack_tmp.SetName("dimension-inversed 4D-STEM data")
     stack_tmp.ShowImage()
-    
+
 stack_4d = fourd_roll_axis(stack_4d)
 print(np.max(stack_4d))
 print(np.min(stack_4d))
