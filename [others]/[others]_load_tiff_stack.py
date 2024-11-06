@@ -4,7 +4,7 @@
 # 20230710
 # load one or many tiff files
 
-
+import os
 import sys
 sys.argv.extend(['-a', ' '])
 import DigitalMicrograph as DM
@@ -33,6 +33,7 @@ if q_check == "Y":
 
 for i in range(len(img_adr)):
     adr = img_adr[i]
+    dataname = os.path.basename(adr).split('.')[0]
     if adr[-3:] == "tif" or adr[-4:]=="tiff":
         data = tifffile.imread(adr)
         if q_check == "Y":
@@ -51,5 +52,6 @@ for i in range(len(img_adr)):
 
 
     data_dm = DM.CreateImage(data.copy())
+    data_dm.SetName(dataname)
     data_dm.SetName("tif file loaded_%02d"%(i+1))
     data_dm.ShowImage()
