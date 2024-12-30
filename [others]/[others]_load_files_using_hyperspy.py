@@ -57,8 +57,10 @@ def transform_to_DM(img, datatype=False, roll_axis=True):
     for i in range(n_dim):
         dm_out.SetDimensionCalibration(i, calibration_info[i][0], calibration_info[i][1], calibration_info[i][2], 0)
     
-    
-    dm_out.SetName(img.metadata.General.original_filename[:-4]+"_"+img.metadata.General.title)
+    try:
+        dm_out.SetName(img.metadata.General.original_filename[:-4]+"_"+img.metadata.General.title)
+    except:
+        dm_out.SetName("imported")
     dm_out.ShowImage()
     
 file_adr = tkf.askopenfilenames()
