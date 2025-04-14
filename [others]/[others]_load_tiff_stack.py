@@ -53,5 +53,4 @@ for i in range(len(img_adr)):
 
     data_dm = DM.CreateImage(data.copy())
     data_dm.SetName(dataname)
-    data_dm.SetName("tif file loaded_%02d"%(i+1))
     data_dm.ShowImage()
