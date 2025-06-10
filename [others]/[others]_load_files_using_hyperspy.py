@@ -12,6 +12,7 @@ import sys
 sys.argv.extend(['-a', ' '])
 import DigitalMicrograph as DM
 
+import os
 import numpy as np
 import tkinter.filedialog as tkf
 import hyperspy
@@ -29,7 +30,7 @@ def fourd_roll_axis(stack):
     stack = np.rollaxis(np.rollaxis(stack, 2, 0), 3, 1)
     return stack
     
-def transform_to_DM(img, datatype=False, roll_axis=True):
+def transform_to_DM(img, file_adr, datatype=False, roll_axis=True):
     n_dim = len(img.data.shape)
     calibration_info = []
     for i in range(n_dim):
@@ -60,7 +61,7 @@ def transform_to_DM(img, datatype=False, roll_axis=True):
     try:
         dm_out.SetName(img.metadata.General.original_filename[:-4]+"_"+img.metadata.General.title)
     except:
-        dm_out.SetName("imported")
+        dm_out.SetName(os.path.basename(file_adr).split("\\")[-1])
     dm_out.ShowImage()
     
 file_adr = tkf.askopenfilenames()
@@ -72,12 +73,12 @@ for i in range(len(file_adr)):
     if isinstance(data_loaded, list):
         for j in range(len(data_loaded)):
             if data_loaded[j].metadata.General.title == "EDS" and len(data_loaded[j].data.shape) == 3:
-                transform_to_DM(data_loaded[j], datatype=np.uint8, roll_axis=True)
+                transform_to_DM(data_loaded[j], file_adr[i], datatype=np.uint8, roll_axis=True)
             else:
-                transform_to_DM(data_loaded[j], roll_axis=False)
+                transform_to_DM(data_loaded[j], file_adr[i], roll_axis=False)
             
     else:
         if data_loaded.metadata.General.title == "EDS" and len(data_loaded.data.shape) == 3:
-            transform_to_DM(data_loaded, datatype=np.uint8, roll_axis=True)
+            transform_to_DM(data_loaded, file_adr[i], datatype=np.uint8, roll_axis=True)
         else:
-            transform_to_DM(data_loaded, roll_axis=False)
+            transform_to_DM(data_loaded, file_adr[i], roll_axis=False)
