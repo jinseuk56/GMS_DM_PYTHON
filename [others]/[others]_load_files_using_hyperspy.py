@@ -61,7 +61,7 @@ def transform_to_DM(img, file_adr, datatype=False, roll_axis=True):
     try:
         dm_out.SetName(img.metadata.General.original_filename[:-4]+"_"+img.metadata.General.title)
     except:
-        dm_out.SetName(os.path.basename(file_adr).split("\\")[-1])
+        dm_out.SetName(os.path.basename(file_adr).split("\\").split(".")[0])
     dm_out.ShowImage()
     
 file_adr = tkf.askopenfilenames()
