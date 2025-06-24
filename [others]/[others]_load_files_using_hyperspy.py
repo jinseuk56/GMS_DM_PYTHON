@@ -46,6 +46,9 @@ def transform_to_DM(img, file_adr, datatype=False, roll_axis=True):
     if datatype:
         dm_out = dm_out.astype(datatype)
         
+    else:
+        dm_out = dm_out.astype(np.float32)
+        
     if roll_axis:
         if n_dim == 3:
             dm_out = threed_roll_axis(dm_out)
