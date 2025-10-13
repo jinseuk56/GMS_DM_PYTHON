@@ -3,8 +3,11 @@
 
 The purpose of this work is to offer basic tools for processing multi-dimensional STEM data in GMS (Gatan Microscopy Suite 3). Therefore, you must know how to execute Python scripts and DM scripts in Python-integrated GMS 3.  
 ___
-### Python in GMS 3
-[Tutorials (official videos presented by Gatan)](https://www.notion.so/Tutorials-official-videos-presented-by-Gatan-340c0b07118e41f8b4e1b6407d0a73a6?pvs=21)
+### Python in GMS 3 (official tutorials presented by Gatan)
+[GMS Setup and First Python Script](https://www.youtube.com/watch?v=MBxn0aFqOHc)  
+[Customizing the Installed Python Environment](https://www.youtube.com/watch?v=-pQMytgaRVg)  
+[Python in Gatan Microscopy Suite](https://www.youtube.com/watch?v=NySX254GZSQ)
+
 ___
 ### How to install a Python package on the python environment of GMS 3
 1) Install Python-integrated GMS 3 (the latest version is recommended)
