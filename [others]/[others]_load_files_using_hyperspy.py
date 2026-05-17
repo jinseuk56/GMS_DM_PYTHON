@@ -71,7 +71,7 @@ file_adr = tkf.askopenfilenames()
 print(file_adr)
 
 for i in range(len(file_adr)):
-    data_loaded = hys.load(file_adr[i], reader='hspy')
+    data_loaded = hys.load(file_adr[i])
     print(data_loaded)
     if isinstance(data_loaded, list):
         for j in range(len(data_loaded)):
